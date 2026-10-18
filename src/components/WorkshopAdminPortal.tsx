@@ -11,7 +11,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 // Staff-only for now: the 4x4 configurator is still being built and is not shown to customers.
 const ConfiguratorStudio = lazy(() => import('./ConfiguratorStudio').then((m) => ({ default: m.ConfiguratorStudio })));
 import { ApiError, getToken, login, signOut, staffApiConfigured } from '../lib/staffApi';
-import { WORKSHOP_MASTER_QUESTIONNAIRE, WORKSHOP_INFO } from '../data/cawData';
+import { WORKSHOP_INFO } from '../data/cawData';
 import {
   Lock,
   Unlock,
@@ -26,25 +26,31 @@ import {
   Save,
   LogOut,
   X,
-  Copy,
-  Check,
   Send,
-  FileText,
   Clock,
   Sparkles,
   Sliders,
   Images,
+  ChevronDown,
 } from 'lucide-react';
 
+type StaffTab = 'pipeline' | 'media' | 'configurator';
+
+/** Turn a section on when it is ready for staff. Sections that are off show "Coming soon". */
+const STAFF_SECTIONS: { id: StaffTab; label: string; short: string; ready: boolean }[] = [
+  { id: 'pipeline', label: 'Live pipeline and bays', short: 'Pipeline', ready: true },
+  { id: 'media', label: 'Finished builds: photos and videos', short: 'Finished builds', ready: true },
+  { id: 'configurator', label: '4x4 configurator', short: 'Configurator', ready: false },
+];
+
 interface AdminPortalProps {
-  isOpen: boolean;
+  /** Leaves the staff page and returns to the public site. */
   onClose: () => void;
   pipeline: PipelineBuild[];
   onUpdatePipeline: (newPipeline: PipelineBuild[]) => void;
 }
 
 export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
-  isOpen,
   onClose,
   pipeline,
   onUpdatePipeline,
@@ -55,8 +61,8 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
   const [loginError, setLoginError] = useState('');
   const [loginBusy, setLoginBusy] = useState(false);
 
-  // Admin Active Tab: 'pipeline' | 'questionnaire'
-  const [activeTab, setActiveTab] = useState<'pipeline' | 'media' | 'questionnaire' | 'configurator'>('pipeline');
+  // Admin Active Tab: 'pipeline' | 'media' | 'configurator'
+  const [activeTab, setActiveTab] = useState<StaffTab>('pipeline');
 
   // Currently selected Bay to edit
   const [selectedBayId, setSelectedBayId] = useState<string>(pipeline[0]?.id || '');
@@ -80,9 +86,6 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
   // Photo Upload State for Bay
   const [attachedPhotos, setAttachedPhotos] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Questionnaire Copy State
-  const [copiedQuestionnaire, setCopiedQuestionnaire] = useState(false);
 
   // Populate form when selected bay changes
   useEffect(() => {
@@ -129,8 +132,6 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
       setVoiceSupported(false);
     }
   }, []);
-
-  if (!isOpen) return null;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -234,37 +235,9 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
     }
   };
 
-  // Generate Google Form text for internal staff questionnaire
-  const generateGoogleFormText = () => {
-    let output = `COORG AUTO WORKS (CAW) — MASTER WORKSHOP DATA QUESTIONNAIRE\n`;
-    output += `Coorg Auto Works, Balale Road, Ponnampet, South Kodagu, Karnataka\n`;
-    output += `For Internal Workshop Staff & Technicians\n\n`;
-
-    WORKSHOP_MASTER_QUESTIONNAIRE.forEach((section, idx) => {
-      output += `============================================================\n`;
-      output += `SECTION ${idx + 1}: ${section.topicTitle.toUpperCase()} (${section.category})\n`;
-      output += `------------------------------------------------------------\n`;
-      output += `WHAT THIS SERVICE ENTAILS:\n${section.whatItIs}\n\n`;
-      output += `WHAT WAS ESTIMATED IN PROTOTYPE:\n${section.whatWasGuessed}\n\n`;
-      output += `QUESTIONS FOR TECHNICIANS TO ANSWER:\n`;
-      section.questionsForOwner.forEach((q, qIdx) => {
-        output += `  ${qIdx + 1}. ${q}\n`;
-      });
-      output += `\n`;
-    });
-
-    return output;
-  };
-
-  const handleCopyQuestionnaire = () => {
-    navigator.clipboard.writeText(generateGoogleFormText());
-    setCopiedQuestionnaire(true);
-    setTimeout(() => setCopiedQuestionnaire(false), 3000);
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md caw-fade-in">
-      <div className={`relative w-full ${activeTab === 'configurator' ? 'max-w-7xl' : 'max-w-5xl'} bg-[color:var(--t-panel)] rounded-2xl border border-[color:var(--t-borderstrong)] shadow-2xl flex flex-col max-h-[95vh] overflow-hidden`}>
+    <div className="min-h-screen bg-[color:var(--t-page)] sm:p-6 flex justify-center items-start caw-fade-in">
+      <div className={`relative w-full ${activeTab === 'configurator' ? 'max-w-7xl' : 'max-w-6xl'} bg-[color:var(--t-panel)] flex flex-col min-h-screen sm:min-h-[calc(100vh-3rem)] sm:rounded-2xl sm:border sm:border-[color:var(--t-borderstrong)] sm:shadow-xl overflow-hidden`}>
         {/* Top Operations Header */}
         <div className="p-4 sm:p-6 border-b border-[color:var(--t-border)] bg-[color:var(--t-panel)] flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -296,9 +269,10 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
             )}
             <button
               onClick={onClose}
-              className="p-2 text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] rounded-lg bg-[color:var(--t-cardsel)] hover:bg-[color:var(--t-raised)] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[color:var(--t-fg2)] rounded-lg bg-[color:var(--t-cardsel)] hover:bg-[color:var(--t-raised)] border border-[color:var(--t-borderstrong)] transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
+              <span>Back to site</span>
             </button>
           </div>
         </div>
@@ -313,7 +287,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
               Workshop Staff Authorization
             </h4>
             <p className="mt-2 text-xs sm:text-sm text-[color:var(--t-muted)] leading-relaxed">
-              Enter the staff password to update bays, add photos and videos of finished builds, and open the staff questionnaire.
+              Enter the staff password to update bays, add photos and videos of finished builds.
             </p>
 
             {!staffApiConfigured() && (
@@ -354,54 +328,43 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
         ) : (
           /* ----------------- AUTHENTICATED STAFF OPERATIONS CONSOLE ----------------- */
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Top Navigation Tabs */}
-            <div className="flex items-center gap-2 px-6 pt-4 pb-2 border-b border-[color:var(--t-border)] bg-[color:var(--t-bg)]">
-              <button
-                onClick={() => setActiveTab('pipeline')}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 ${
-                  activeTab === 'pipeline'
-                    ? 'bg-amber-500 text-black shadow-sm'
-                    : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] bg-[color:var(--t-card)]'
-                }`}
-              >
-                <Sliders className="w-3.5 h-3.5" />
-                <span>Live Pipeline &amp; Bays Manager</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('media')}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 ${
-                  activeTab === 'media'
-                    ? 'bg-amber-500 text-black shadow-sm'
-                    : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] bg-[color:var(--t-card)]'
-                }`}
-              >
-                <Images className="w-3.5 h-3.5" />
-                <span>Finished Builds: Photos &amp; Videos</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('questionnaire')}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 ${
-                  activeTab === 'questionnaire'
-                    ? 'bg-amber-500 text-black shadow-sm'
-                    : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] bg-[color:var(--t-card)]'
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Internal Staff Questionnaire</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('configurator')}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 ${
-                  activeTab === 'configurator'
-                    ? 'bg-amber-500 text-black shadow-sm'
-                    : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] bg-[color:var(--t-card)]'
-                }`}
-              >
-                <Wrench className="w-3.5 h-3.5" />
-                <span>4x4 Configurator (draft)</span>
-              </button>
+            {/* Section picker: a drop-down on phones, buttons on larger screens */}
+            <div className="border-b border-[color:var(--t-border)] bg-[color:var(--t-bg)] px-4 sm:px-6 pt-4 pb-3">
+              <label htmlFor="staff-section" className="sr-only">Section</label>
+              <div className="relative md:hidden">
+                <select
+                  id="staff-section"
+                  value={activeTab}
+                  onChange={(e) => setActiveTab(e.target.value as StaffTab)}
+                  className="w-full appearance-none rounded-xl border border-[color:var(--t-borderstrong)] bg-[color:var(--t-card)] px-4 py-3 pr-10 text-sm font-semibold text-[color:var(--t-fg)] focus:border-amber-500 focus:outline-none"
+                >
+                  {STAFF_SECTIONS.map((t) => (
+                    <option key={t.id} value={t.id} disabled={!t.ready}>
+                      {t.label}{t.ready ? '' : ' (coming soon)'}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--t-muted)]" />
+              </div>
+              <div className="hidden md:flex items-center gap-2" role="tablist" aria-label="Staff sections">
+                {STAFF_SECTIONS.map((t) => (
+                  <button
+                    key={t.id}
+                    role="tab"
+                    aria-selected={activeTab === t.id}
+                    disabled={!t.ready}
+                    onClick={() => setActiveTab(t.id)}
+                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+                      activeTab === t.id
+                        ? 'bg-amber-500 text-black shadow-sm'
+                        : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] bg-[color:var(--t-card)]'
+                    }`}
+                  >
+                    <span>{t.label}</span>
+                    {!t.ready && <span className="rounded bg-[color:var(--t-raised)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--t-dim)]">Soon</span>}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* TAB 1: PIPELINE & BAYS MANAGER */}
@@ -684,76 +647,16 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
               </div>
             )}
 
-            {/* TAB 2: INTERNAL STAFF QUESTIONNAIRE */}
+            {/* TAB 2: PHOTOS AND VIDEOS */}
             {activeTab === 'media' && <StaffMediaManager onSignedOut={handleLogout} />}
 
             {activeTab === 'configurator' && (
-              <div className="flex-1 overflow-y-auto bg-[color:var(--t-page)]" data-lenis-prevent>
+              <div className="flex-1 bg-[color:var(--t-page)]">
                 <Suspense fallback={<div className="p-10 text-sm text-[color:var(--t-muted)]">Loading the configurator...</div>}>
                   <ErrorBoundary label="The configurator">
                     <ConfiguratorStudio />
                   </ErrorBoundary>
                 </Suspense>
-              </div>
-            )}
-
-            {activeTab === 'questionnaire' && (
-              <div className="flex-1 p-6 overflow-y-auto bg-[color:var(--t-panel)] space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[color:var(--t-border)]">
-                  <div>
-                    <h4 className="text-lg font-bold text-[color:var(--t-fg)] font-display">
-                      Internal Master Questionnaire &amp; Actuals Sheet
-                    </h4>
-                    <p className="text-xs text-[color:var(--t-muted)] mt-0.5">
-                      Hidden from client view. Hand this out to technicians to collect actual turnaround days, machining details, and tools.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleCopyQuestionnaire}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg text-xs transition-colors"
-                    >
-                      {copiedQuestionnaire ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedQuestionnaire ? 'Copied to Clipboard!' : 'Copy for Google Forms'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  {WORKSHOP_MASTER_QUESTIONNAIRE.map((section, idx) => (
-                    <div key={section.id} className="p-5 rounded-xl bg-[color:var(--t-card)] border border-[color:var(--t-border)] space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono-num uppercase text-[color:var(--t-accent)] font-bold">
-                          SECTION {idx + 1} · {section.category}
-                        </span>
-                        <span className="text-xs font-semibold text-[color:var(--t-fg)]">
-                          {section.topicTitle}
-                        </span>
-                      </div>
-
-                      <div className="text-xs text-[color:var(--t-fg2)] leading-relaxed bg-[color:var(--t-page2)] p-3 rounded-lg border border-[color:var(--t-border)]">
-                        <strong className="text-[color:var(--t-fg2)]">What It Is:</strong> {section.whatItIs}
-                      </div>
-
-                      <div className="text-xs text-amber-300/80 bg-amber-950/20 p-3 rounded-lg border border-amber-800/30">
-                        <strong className="text-[color:var(--t-accent2)]">Previous Guess:</strong> {section.whatWasGuessed}
-                      </div>
-
-                      <div className="space-y-2 pt-1">
-                        <span className="text-xs font-bold text-[color:var(--t-fg2)] block">
-                          Questions for Technicians to Answer:
-                        </span>
-                        {section.questionsForOwner.map((q, qIdx) => (
-                          <div key={qIdx} className="flex items-start gap-2.5 text-xs text-[color:var(--t-fg2)]">
-                            <span className="text-[color:var(--t-accent)] font-mono-num font-bold">{qIdx + 1}.</span>
-                            <span>{q}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </div>

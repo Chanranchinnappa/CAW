@@ -211,7 +211,11 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
     return (
       <div className="p-6 text-sm text-[color:var(--t-muted)] flex items-start gap-2">
         <TriangleAlert className="w-4 h-4 text-[color:var(--t-accent)] mt-0.5 shrink-0" />
-        <span>Could not load builds: {loadError}</span>
+        <span>
+          {/not set up/i.test(loadError)
+            ? 'Photo and video uploads are not switched on yet. Staff login works; uploads will appear here once photo storage is connected.'
+            : `Could not load builds: ${loadError}`}
+        </span>
       </div>
     );
   if (!manifest)

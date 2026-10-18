@@ -22,7 +22,41 @@ import { PipelineBuild } from './types';
 
 export default function App() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  // The staff area is its own page at /#/staff (no server setup needed).
+  const readRoute = () => (typeof window !== 'undefined' && window.location.hash === '#/staff' ? 'staff' : 'site');
+  const [route, setRoute] = useState<'site' | 'staff'>(readRoute);
+  useEffect(() => {
+    const onHash = () => {
+      setRoute(readRoute());
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  const openStaff = () => {
+    window.location.hash = '#/staff';
+  };
+  const leaveStaff = () => {
+    history.pushState('', document.title, window.location.pathname + window.location.search);
+    setRoute('site');
+    window.scrollTo(0, 0);
+  };
+  useEffect(() => {
+    // The staff page must not appear in search results.
+    const prev = document.title;
+    let meta: HTMLMetaElement | null = null;
+    if (route === 'staff') {
+      document.title = 'Staff | Coorg Auto Works';
+      meta = document.createElement('meta');
+      meta.name = 'robots';
+      meta.content = 'noindex, nofollow';
+      document.head.appendChild(meta);
+    }
+    return () => {
+      document.title = prev;
+      meta?.remove();
+    };
+  }, [route]);
   const [preselectedService, setPreselectedService] = useState<string | undefined>(undefined);
 
   // Dynamic Workshop Pipeline (Persisted in localStorage for staff updates)
@@ -55,6 +89,18 @@ export default function App() {
     setPreselectedService(undefined);
   };
 
+  if (route === 'staff') {
+    return (
+      <MotionConfig reducedMotion="user">
+        <div className="bg-[color:var(--t-page)] text-[color:var(--t-fg)] font-sans selection:bg-amber-500 selection:text-black">
+          <ErrorBoundary label="The staff page" onReset={leaveStaff}>
+            <WorkshopAdminPortal onClose={leaveStaff} pipeline={pipeline} onUpdatePipeline={handleUpdatePipeline} />
+          </ErrorBoundary>
+        </div>
+      </MotionConfig>
+    );
+  }
+
   return (
     <MotionConfig reducedMotion="user">
     <SmoothScroll />
@@ -63,7 +109,7 @@ export default function App() {
       {/* Top Navigation Bar */}
       <Header
         onOpenBooking={() => handleOpenBooking()}
-        onOpenAdminPortal={() => setIsAdminOpen(true)}
+        onOpenAdminPortal={() => openStaff()}
       />
 
       {/* Main Page Flow */}
@@ -81,18 +127,18 @@ export default function App() {
         {/* Live Workshop Bays Pipeline (Directly maintainable by staff) */}
         <PipelineSection
           pipeline={pipeline}
-          onOpenAdminPortal={() => setIsAdminOpen(true)}
+          onOpenAdminPortal={() => openStaff()}
         />
 
         {/* Workshop Facility, Directions & Emergency Contact Hub */}
         <WorkshopLocation
           onOpenBooking={() => handleOpenBooking()}
-          onOpenAdminPortal={() => setIsAdminOpen(true)}
+          onOpenAdminPortal={() => openStaff()}
         />
       </main>
 
-      {/* Quiet Footer with Discreet Staff Operations Link */}
-      <Footer onOpenAdminPortal={() => setIsAdminOpen(true)} />
+      {/* Footer. Staff open the portal from the lock icon in the header. */}
+      <Footer />
 
       {/* Service Consultation & Booking Modal */}
       <ServiceInquiryModal
@@ -101,15 +147,6 @@ export default function App() {
         preselectedService={preselectedService}
       />
 
-      {/* Background Operations Portal (Protected for workshop staff to update bays, voice logs & questionnaire) */}
-      <ErrorBoundary label="The staff portal" onReset={() => setIsAdminOpen(false)}>
-        <WorkshopAdminPortal
-          isOpen={isAdminOpen}
-          onClose={() => setIsAdminOpen(false)}
-          pipeline={pipeline}
-          onUpdatePipeline={handleUpdatePipeline}
-        />
-      </ErrorBoundary>
     </div>
     </MotionConfig>
   );

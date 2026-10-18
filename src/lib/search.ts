@@ -64,9 +64,11 @@ export const SEARCH_ITEMS: SearchItem[] = [
     kind: 'Visit',
     detail: `${WORKSHOP_INFO.contact.phoneFormatted}, ${WORKSHOP_INFO.contact.hours}`,
     target: 'workshop-facility',
-    words: 'contact call phone whatsapp address location map directions hours open timing visit ponnampet matturu',
+    words: 'contact call phone number numbers mobile telephone tel whatsapp email address location map directions route hours open opening timing timings time visit where find ponnampet matturu kodagu coorg',
   },
 ];
+
+const STOP = new Set(['the', 'a', 'an', 'of', 'for', 'and', 'in', 'on', 'to', 'my', 'your', 'do', 'you', 'we', 'can', 'is', 'are', 'how', 'what', 'near', 'me', 'i', 'need', 'want', 'with']);
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -90,7 +92,8 @@ const INDEX = SEARCH_ITEMS.map((it) => ({
 export function search(query: string, limit = 8): SearchItem[] {
   const q = norm(query);
   if (!q) return [];
-  const tokens = q.split(' ');
+  const tokens = q.split(' ').filter((t) => !STOP.has(t));
+  if (!tokens.length) return [];
   const scored: { it: SearchItem; score: number }[] = [];
   for (const row of INDEX) {
     let score = 0;
@@ -109,5 +112,7 @@ export function search(query: string, limit = 8): SearchItem[] {
     }
     if (ok) scored.push({ it: row.it, score });
   }
-  return scored.sort((a, b) => b.score - a.score).slice(0, limit).map((x) => x.it);
+  // Ties go to services, vehicles and contact details ahead of sample builds.
+  const rank = (k: SearchItem['kind']) => (k === 'Build' ? 1 : 0);
+  return scored.sort((a, b) => b.score - a.score || rank(a.it.kind) - rank(b.it.kind)).slice(0, limit).map((x) => x.it);
 }

@@ -12,6 +12,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 const ConfiguratorStudio = lazy(() => import('./ConfiguratorStudio').then((m) => ({ default: m.ConfiguratorStudio })));
 import { ApiError, getToken, login, signOut, staffApiConfigured } from '../lib/staffApi';
 import { WORKSHOP_INFO } from '../data/cawData';
+import { useDictation, DICTATION_LANGS, DictationLang } from '../lib/useDictation';
 import {
   Lock,
   Unlock,
@@ -81,10 +82,9 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
   const [newChecklistText, setNewChecklistText] = useState('');
 
   // Voice Input State
-  const [isRecording, setIsRecording] = useState(false);
   const [voiceText, setVoiceText] = useState('');
-  const [voiceSupported, setVoiceSupported] = useState(true);
-  const recognitionRef = useRef<any>(null);
+  const dictation = useDictation({ value: voiceText, onChange: setVoiceText });
+  const isRecording = dictation.listening;
 
   // Photo Upload State for Bay
   const [attachedPhotos, setAttachedPhotos] = useState<string[]>([]);
@@ -100,41 +100,15 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
       setEditTarget(selectedBay.targetDelivery);
       setEditChecklist(selectedBay.keyWorkItems || []);
       setAttachedPhotos(selectedBay.photos || []);
-      setVoiceText('');
     }
   }, [selectedBayId, pipeline]);
 
-  // Handle Speech Recognition setup
+  // Switching bay ends any dictation and clears the note box. A live refresh of the board must not.
   useEffect(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-IN'; // Indian English
-
-      recognition.onresult = (event: any) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          transcript += event.results[i][0].transcript;
-        }
-        setVoiceText((prev) => (prev ? `${prev} ${transcript}` : transcript));
-      };
-
-      recognition.onerror = () => {
-        setIsRecording(false);
-      };
-
-      recognition.onend = () => {
-        setIsRecording(false);
-      };
-
-      recognitionRef.current = recognition;
-    } else {
-      setVoiceSupported(false);
-    }
-  }, []);
+    dictation.stop();
+    setVoiceText('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBayId]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,22 +138,8 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
 
   // Toggle Voice Input
   const toggleRecording = () => {
-    if (!voiceSupported) {
-      alert('Speech recognition is not supported in this browser. You can type directly in the log notes.');
-      return;
-    }
-
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
-    } else {
-      try {
-        recognitionRef.current?.start();
-        setIsRecording(true);
-      } catch (err) {
-        setIsRecording(false);
-      }
-    }
+    if (dictation.listening) dictation.stop();
+    else dictation.start();
   };
 
   // Save changes to current Bay
@@ -510,8 +470,8 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                   </div>
 
                   {/* VOICE INPUT FEATURE: Dictate Build Updates with greasy hands */}
-                  <div className="p-4 rounded-xl bg-gradient-to-r from-neutral-900 to-[#161c28] border border-[color:var(--t-border)]">
-                    <div className="flex items-center justify-between mb-2">
+                  <div className="p-4 rounded-xl bg-[color:var(--t-card)] border border-[color:var(--t-border)]">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
                         <Mic className={`w-4 h-4 ${isRecording ? 'text-red-500 animate-pulse' : 'text-[color:var(--t-accent)]'}`} />
                         <span className="text-xs font-bold text-[color:var(--t-fg)]">
@@ -519,34 +479,63 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                         </span>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={toggleRecording}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                          isRecording
-                            ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
-                            : 'bg-amber-500 hover:bg-amber-400 text-black'
-                        }`}
-                      >
-                        {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                        <span>{isRecording ? 'Stop Recording' : 'Start Voice Dictation'}</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <label className="sr-only" htmlFor="dictation-lang">
+                          Speaking language
+                        </label>
+                        <select
+                          id="dictation-lang"
+                          value={dictation.lang}
+                          onChange={(e) => dictation.setLang(e.target.value as DictationLang)}
+                          className="rounded-lg border border-[color:var(--t-borderstrong)] bg-[color:var(--t-page2)] px-2 py-1.5 text-xs text-[color:var(--t-fg)] focus:border-amber-500 focus:outline-none"
+                        >
+                          {DICTATION_LANGS.map((l) => (
+                            <option key={l.code} value={l.code}>
+                              {l.label}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={toggleRecording}
+                          disabled={!dictation.supported}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                            isRecording
+                              ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
+                              : 'bg-amber-500 hover:bg-amber-400 text-black'
+                          }`}
+                        >
+                          {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                          <span>{isRecording ? 'Stop' : 'Start voice typing'}</span>
+                        </button>
+                      </div>
                     </div>
 
                     <p className="text-[11px] text-[color:var(--t-muted)] mb-2">
-                      Mechanics can speak directly to describe machining, torque settings, or parts installed. It transcribes automatically into project log notes.
+                      Pick the language you will speak, tap start, and talk. The words appear in the box below, and you can edit them before saving. Works best in Chrome.
                     </p>
+                    {!dictation.supported && (
+                      <p className="mb-2 rounded-lg bg-amber-500/10 p-2 text-[11px] text-[color:var(--t-accent2)]">
+                        Voice typing is not available in this browser. Open this page in Chrome, or type the note instead.
+                      </p>
+                    )}
+                    {dictation.error && (
+                      <p role="alert" className="mb-2 rounded-lg bg-red-500/10 p-2 text-[11px] text-red-600">
+                        {dictation.error}
+                      </p>
+                    )}
 
                     <textarea
-                      rows={2}
+                      rows={3}
+                      lang={dictation.lang}
                       value={voiceText}
-                      onChange={(e) => setVoiceText(e.target.value)}
+                      onChange={(e) => dictation.edit(e.target.value)}
                       placeholder={
                         isRecording
-                          ? 'Listening to speech... Speak clearly about this build.'
-                          : 'Dictate or type daily build update log note...'
+                          ? `Listening in ${DICTATION_LANGS.find((l) => l.code === dictation.lang)?.name}. Speak about this build.`
+                          : 'Speak or type the daily build update here...'
                       }
-                      className="w-full px-3 py-2 text-xs bg-[color:var(--t-page2)] border border-[color:var(--t-borderstrong)] rounded-lg text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 resize-none"
+                      className="w-full px-3 py-2 text-sm bg-[color:var(--t-page2)] border border-[color:var(--t-borderstrong)] rounded-lg text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 resize-y"
                     />
 
                     {selectedBay.voiceNotes && selectedBay.voiceNotes.length > 0 && (

@@ -33,4 +33,4 @@ Then, in the website project's build settings, add `VITE_STAFF_API_URL` (the Wor
 
 - Use a long password. Five wrong tries lock that device out for 15 minutes.
 - Everyone shares the password, so change it when someone leaves.
-- Photo and video uploads need extra setup (`GITHUB_TOKEN`) and are switched off until storage is chosen.
+- Photos, videos and the shared live projects board need the R2 storage bucket. See `MEDIA_R2.md`.

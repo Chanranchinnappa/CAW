@@ -9,9 +9,9 @@ export type SiteTheme = 'dark' | 'light';
 const KEY = 'caw_theme';
 
 const readTheme = (): SiteTheme =>
-  typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light'
-    ? 'light'
-    : 'dark';
+  typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark'
+    ? 'dark'
+    : 'light';
 
 /** Site-wide theme. The attribute on <html> is the source of truth (set before paint in index.html). */
 export const useSiteTheme = (): [SiteTheme, (t: SiteTheme) => void] => {

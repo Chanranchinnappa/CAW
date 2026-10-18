@@ -4,12 +4,16 @@
  */
 
 import { useEffect, useState } from 'react';
-import { MEDIA_BASE_URL } from '../config';
+import { STAFF_API_URL } from '../config';
+
+export type MediaStatus = 'shown' | 'hidden' | 'archived';
 
 export interface MediaItem {
   path: string;
   type: 'image' | 'video';
   caption?: string;
+  /** shown on the website, hidden from it, or archived. Missing means shown. */
+  status?: MediaStatus;
   addedAt: string;
   by?: string;
 }
@@ -20,6 +24,7 @@ export interface MediaBuild {
   platform: string;
   year: number | null;
   story: string;
+  status?: MediaStatus;
   createdAt: string;
   media: MediaItem[];
 }
@@ -29,13 +34,15 @@ export interface MediaManifest {
   builds: MediaBuild[];
 }
 
-export const mediaUrl = (path: string) => `${MEDIA_BASE_URL}/${path}`;
+/** Address of a stored file. Staff previews pass their session token so hidden files can still be seen. */
+export const mediaUrl = (path: string, staffToken?: string | null) =>
+  `${STAFF_API_URL}/${path}${staffToken ? `?t=${encodeURIComponent(staffToken)}` : ''}`;
 
-/** Reads the public manifest from GitHub Pages. Returns null when media is not set up or not reachable. */
+/** Reads the public list (shown builds and files only). Returns null when storage is not set up or not reachable. */
 export const fetchManifest = async (): Promise<MediaManifest | null> => {
-  if (!MEDIA_BASE_URL) return null;
+  if (!STAFF_API_URL) return null;
   try {
-    const res = await fetch(`${MEDIA_BASE_URL}/media/manifest.json`, { cache: 'no-cache' });
+    const res = await fetch(`${STAFF_API_URL}/api/public/manifest`);
     if (!res.ok) return null;
     const data = await res.json();
     return Array.isArray(data?.builds) ? (data as MediaManifest) : null;

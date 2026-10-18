@@ -3,13 +3,15 @@ main = "index.js"
 compatibility_date = "2025-01-01"
 
 [vars]
-# Format: owner/repo of the public media repository that GitHub Pages serves
-GITHUB_REPO = "Chanranchinnappa/CAW-media"
-GITHUB_BRANCH = "main"
 # The website addresses that may call this API. Add your real site address after you deploy it.
 ALLOWED_ORIGINS = "https://caw.charanchinnappa1929.workers.dev,http://localhost:3000"
+
+# Photo and video storage (Cloudflare R2). Create the bucket once with:
+#   npx wrangler r2 bucket create caw-media
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "caw-media"
 
 # Secrets are NOT stored here. Set them with:
 #   npx wrangler secret put STAFF_PASSWORD
 #   npx wrangler secret put SESSION_SECRET
-#   npx wrangler secret put GITHUB_TOKEN

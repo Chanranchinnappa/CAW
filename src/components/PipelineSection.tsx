@@ -100,7 +100,7 @@ const BayRow: React.FC<{ pipe: PipelineBuild; index: number }> = ({ pipe, index 
                 {pipe.photos && pipe.photos.length > 0 && (
                   <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
                     {pipe.photos.map((img, i) => (
-                      <img key={i} src={img} alt={`Bay ${pipe.bayNumber} update ${i + 1}`} className="h-16 w-24 shrink-0 rounded-lg object-cover" />
+                      <img key={i} loading="lazy" decoding="async" src={img} alt={`Bay ${pipe.bayNumber} update ${i + 1}`} className="h-16 w-24 shrink-0 rounded-lg object-cover" />
                     ))}
                   </div>
                 )}

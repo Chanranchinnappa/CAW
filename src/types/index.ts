@@ -9,13 +9,18 @@ export type VehiclePlatformId =
   | 'major-mdi'
   | 'bolero'
   | 'safari'
-  | 'gypsy';
+  | 'gypsy'
+  | 'thar'
+  | 'gurkha'
+  | 'innova'
+  | 'qualis'
+  | 'sumo';
 
 export interface VehiclePlatform {
   id: VehiclePlatformId;
   name: string;
   tagline: string;
-  lineup: 'Mahindra' | 'Tata' | 'Maruti Suzuki';
+  lineup: 'Mahindra' | 'Tata' | 'Maruti Suzuki' | 'Toyota' | 'Force';
   baseHorsepower: string;
   transmission: string;
   driveType: string;

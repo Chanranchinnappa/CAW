@@ -52,7 +52,11 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
         >
           {!imgError ? (
             <img
-              src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=2000&q=80"
+              src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1400&q=75"
+              srcSet="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=75 800w, https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1400&q=75 1400w, https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=2000&q=75 2000w"
+              sizes="100vw"
+              fetchPriority="high"
+              decoding="async"
               alt=""
               referrerPolicy="no-referrer"
               onError={() => setImgError(true)}

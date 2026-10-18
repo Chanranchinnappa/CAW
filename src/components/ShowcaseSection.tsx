@@ -176,7 +176,7 @@ export const ShowcaseSection: React.FC = () => {
           title="Builds that left the workshop"
           intro="Sample builds are shown until verified customer records and photos are published."
           right={
-            <div role="tablist" aria-label="Filter builds by vehicle" className="flex w-fit items-center gap-1 rounded-full border border-[color:var(--t-border)] bg-[color:var(--t-panel2)] p-1">
+            <div role="tablist" aria-label="Filter builds by vehicle" className="flex w-fit max-w-full flex-wrap items-center gap-1 rounded-3xl sm:rounded-full border border-[color:var(--t-border)] bg-[color:var(--t-panel2)] p-1">
               {FILTERS.map((f) => (
                 <button
                   key={f.id}

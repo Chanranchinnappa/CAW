@@ -28,15 +28,15 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdminPortal }) => {
     <footer ref={ref} className="relative overflow-hidden border-t border-[color:var(--t-border)] bg-[color:var(--t-page2)] text-sm text-[color:var(--t-muted)]">
       <div className="mx-auto max-w-7xl px-4 pt-14 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
-          <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-3">
+          <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-1">
             {LINKS.map((l) => (
-              <a key={l.href} href={l.href} className="transition-colors hover:text-[color:var(--t-fg)] focus:outline-none focus-visible:text-[color:var(--t-fg)]">
+              <a key={l.href} href={l.href} className="inline-block py-2.5 transition-colors hover:text-[color:var(--t-fg)] focus:outline-none focus-visible:text-[color:var(--t-fg)]">
                 {l.label}
               </a>
             ))}
           </nav>
           <div className="space-y-1 md:text-right">
-            <a href={`tel:${WORKSHOP_INFO.contact.phonePrimary}`} className="block font-semibold text-[color:var(--t-fg)] hover:text-[color:var(--t-accent2)] transition-colors">
+            <a href={`tel:${WORKSHOP_INFO.contact.phonePrimary}`} className="block py-2 font-semibold text-[color:var(--t-fg)] hover:text-[color:var(--t-accent2)] transition-colors">
               {WORKSHOP_INFO.contact.phoneFormatted}
             </a>
             <p>{WORKSHOP_INFO.contact.hours}</p>

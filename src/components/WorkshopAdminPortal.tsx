@@ -38,9 +38,9 @@ type StaffTab = 'pipeline' | 'media' | 'configurator';
 
 /** Turn a section on when it is ready for staff. Sections that are off show "Coming soon". */
 const STAFF_SECTIONS: { id: StaffTab; label: string; short: string; ready: boolean }[] = [
-  { id: 'pipeline', label: 'Live pipeline and bays', short: 'Pipeline', ready: true },
+  { id: 'pipeline', label: 'Live projects', short: 'Live projects', ready: true },
   { id: 'media', label: 'Finished builds: photos and videos', short: 'Finished builds', ready: true },
-  { id: 'configurator', label: '4x4 configurator', short: 'Configurator', ready: false },
+  { id: 'configurator', label: '4x4 configurator', short: 'Configurator', ready: true },
 ];
 
 interface AdminPortalProps {
@@ -48,12 +48,15 @@ interface AdminPortalProps {
   onClose: () => void;
   pipeline: PipelineBuild[];
   onUpdatePipeline: (newPipeline: PipelineBuild[]) => void;
+  /** Whether the latest change reached the shared board. */
+  pipelineSync?: 'idle' | 'saving' | 'saved' | 'error';
 }
 
 export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
   onClose,
   pipeline,
   onUpdatePipeline,
+  pipelineSync = 'idle',
 }) => {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!getToken());
@@ -366,6 +369,14 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                 ))}
               </div>
             </div>
+
+            {activeTab === 'pipeline' && pipelineSync !== 'idle' && (
+              <div role="status" className={`px-4 sm:px-6 py-2 text-xs border-b border-[color:var(--t-border)] ${pipelineSync === 'error' ? 'text-red-500' : 'text-[color:var(--t-muted)]'}`}>
+                {pipelineSync === 'saving' && 'Saving to all devices...'}
+                {pipelineSync === 'saved' && 'Saved. Every device now shows this board.'}
+                {pipelineSync === 'error' && 'Saved on this phone only. Could not reach the shared board: sign in again, and check that photo storage (R2) is connected.'}
+              </div>
+            )}
 
             {/* TAB 1: PIPELINE & BAYS MANAGER */}
             {activeTab === 'pipeline' && (

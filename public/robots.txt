@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://caw.charanchinnappa1929.workers.dev/sitemap.xml

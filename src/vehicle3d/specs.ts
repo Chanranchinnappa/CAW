@@ -65,6 +65,32 @@ export const SPECS: Record<VehiclePlatformId, VehicleSpec> = {
     beltH: 0.9, hoodH: 0.92, cowlX: 1.0, roofH: 1.46, screenRake: 0.4, cabinRearX: -2.2,
     hoodRound: 0.07, grille: 'mesh', headlamp: 'rect', spare: 'rear', rearSeat: true, fenderWidth: 0.4,
   },
+  // Draft sizes for the newer models: approximate until real photos or drawings arrive.
+  thar: {
+    kind: 'jeep', length: 3.92, width: 1.73, wheelbase: 2.43, track: 1.45, baseClear: 0.52, stockTyreR: 0.37,
+    beltH: 0.58, hoodH: 0.85, cowlX: 0.78, roofH: 1.36, screenRake: 0.2, cabinRearX: -1.85,
+    hoodRound: 0.06, grille: 'slots', headlamp: 'round', spare: 'rear', rearSeat: true, fenderWidth: 0.4,
+  },
+  gurkha: {
+    kind: 'jeep', length: 3.86, width: 1.74, wheelbase: 2.4, track: 1.45, baseClear: 0.55, stockTyreR: 0.37,
+    beltH: 0.6, hoodH: 0.86, cowlX: 0.76, roofH: 1.38, screenRake: 0.12, cabinRearX: -1.82,
+    hoodRound: 0.04, grille: 'bars', headlamp: 'round', spare: 'rear', rearSeat: true, fenderWidth: 0.4,
+  },
+  innova: {
+    kind: 'suv', length: 4.55, width: 1.77, wheelbase: 2.75, track: 1.51, baseClear: 0.38, stockTyreR: 0.33,
+    beltH: 0.86, hoodH: 0.85, cowlX: 1.0, roofH: 1.5, screenRake: 0.45, cabinRearX: -2.2,
+    hoodRound: 0.1, grille: 'bars', headlamp: 'rect', spare: 'none', rearSeat: true, fenderWidth: 0.36,
+  },
+  qualis: {
+    kind: 'suv', length: 4.12, width: 1.67, wheelbase: 2.65, track: 1.45, baseClear: 0.4, stockTyreR: 0.33,
+    beltH: 0.86, hoodH: 0.84, cowlX: 0.86, roofH: 1.6, screenRake: 0.3, cabinRearX: -2.0,
+    hoodRound: 0.06, grille: 'bars', headlamp: 'rect', spare: 'rear', rearSeat: true, fenderWidth: 0.36,
+  },
+  sumo: {
+    kind: 'suv', length: 4.15, width: 1.71, wheelbase: 2.45, track: 1.47, baseClear: 0.42, stockTyreR: 0.35,
+    beltH: 0.86, hoodH: 0.86, cowlX: 0.84, roofH: 1.58, screenRake: 0.28, cabinRearX: -2.0,
+    hoodRound: 0.05, grille: 'mesh', headlamp: 'rect', spare: 'rear', rearSeat: true, fenderWidth: 0.38,
+  },
 };
 
 /** Paint finishes mapped to physically based material settings. */

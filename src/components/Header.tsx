@@ -62,12 +62,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
       className="sticky top-0 z-40 border-b border-[color:var(--t-border)] bg-[color:color-mix(in_srgb,var(--t-page)_88%,transparent)] backdrop-blur-xl"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-6">
+        <div className="flex h-16 items-center justify-between gap-3 sm:gap-6">
           <a href="#" className={`shrink-0 whitespace-nowrap font-display text-lg font-extrabold tracking-tight text-[color:var(--t-fg)] rounded ${ring}`}>
-            <img src="/logo.png" alt="Coorg Auto Works" width="800" height="329" className="h-11 w-auto" />
+            <span className="flex items-center gap-2.5">
+              <img src="/logo-small.webp" alt="" width="360" height="148" className="h-9 w-auto sm:h-10" />
+              <span className="hidden min-[380px]:inline lg:hidden xl:inline text-sm sm:text-lg">Coorg Auto Works</span>
+            </span>
           </a>
 
-          <nav aria-label="Primary" className="hidden items-center gap-1 text-sm font-medium md:flex">
+          <nav aria-label="Primary" className="hidden items-center gap-1 text-sm font-medium lg:flex">
             {NAV.map((link) => (
               <a
                 key={link.id}
@@ -88,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
             ))}
           </nav>
 
-          <div className="hidden shrink-0 items-center gap-2 sm:flex">
+          <div className="hidden shrink-0 items-center gap-2 lg:flex">
             <button
               onClick={toggleTheme}
               aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
@@ -125,8 +128,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
             )}
           </div>
 
-          <div className="flex items-center gap-2 md:hidden">
-            <button onClick={onOpenBooking} className={`rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-black ${ring}`}>
+          <div className="flex items-center gap-2 lg:hidden">
+            <button onClick={onOpenBooking} className={`rounded-full bg-amber-500 px-4 py-2 text-xs font-semibold text-black ${ring}`}>
               Book
             </button>
             <button
@@ -148,7 +151,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.45, ease: EASE }}
-            className="overflow-hidden border-t border-[color:var(--t-border)] md:hidden"
+            className="overflow-hidden border-t border-[color:var(--t-border)] lg:hidden"
           >
             <div className="space-y-1 px-4 pb-5 pt-3">
               {NAV.map((link, i) => (

@@ -4,12 +4,14 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Loader2, Play, Plus, Trash2, TriangleAlert, Check } from 'lucide-react';
+import { Archive, ArchiveRestore, Check, Eye, EyeOff, ImagePlus, Loader2, Play, Plus, Star, Trash2, TriangleAlert } from 'lucide-react';
 import { VEHICLE_PLATFORMS } from '../data/cawData';
-import { MediaBuild, MediaManifest, mediaUrl, prepareFile } from '../lib/media';
+import { MediaBuild, MediaManifest, MediaStatus, mediaUrl, prepareFile } from '../lib/media';
 import {
   ApiError,
   fetchStaffManifest,
+  getToken,
+  updateMedia,
   removeBuild,
   removeMedia,
   saveBuild,
@@ -32,43 +34,100 @@ const field =
   'w-full px-3 py-2 text-sm bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] rounded-lg text-[color:var(--t-fg)] placeholder:text-[color:var(--t-dim)] focus:outline-none focus:border-amber-500';
 const label = 'block text-xs font-medium text-[color:var(--t-muted)] mb-1';
 
-/** Thumbnail that explains itself while GitHub Pages is still publishing a new file */
-const Thumb: React.FC<{ item: MediaBuild['media'][number]; onRemove: () => void; busy: boolean }> = ({ item, onRemove, busy }) => {
+const statusOf = (x: { status?: MediaStatus }): MediaStatus => x.status || 'shown';
+
+const BUILD_STATUS_LABEL: Record<MediaStatus, string> = {
+  shown: 'On the website',
+  hidden: 'Hidden from the website',
+  archived: 'Archived (kept, not shown)',
+};
+
+const IconButton: React.FC<{ label: string; onClick: () => void; disabled?: boolean; danger?: boolean; active?: boolean; children: React.ReactNode }> = ({
+  label, onClick, disabled, danger, active, children,
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    title={label}
+    aria-label={label}
+    className={`p-1.5 rounded text-white transition-colors disabled:opacity-40 ${
+      danger ? 'bg-black/60 hover:bg-red-600' : active ? 'bg-amber-500 text-black' : 'bg-black/60 hover:bg-black/80'
+    }`}
+  >
+    {children}
+  </button>
+);
+
+/** One photo or video with its show, hide, archive, cover and delete controls. */
+const Thumb: React.FC<{
+  item: MediaBuild['media'][number];
+  isCover: boolean;
+  busy: boolean;
+  onStatus: (s: MediaStatus) => void;
+  onCover: () => void;
+  onDelete: () => void;
+}> = ({ item, isCover, busy, onStatus, onCover, onDelete }) => {
   const [failed, setFailed] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const status = statusOf(item);
+  const src = mediaUrl(item.path, getToken());
   return (
-    <div className="relative aspect-square rounded-lg overflow-hidden border border-[color:var(--t-border)] bg-[color:var(--t-card)] group">
-      {item.type === 'image' && !failed ? (
-        <img src={mediaUrl(item.path)} alt={item.caption || 'Build photo'} loading="lazy" onError={() => setFailed(true)} className="w-full h-full object-cover" />
-      ) : item.type === 'video' && !failed ? (
-        <>
-          <video src={mediaUrl(item.path)} preload="metadata" muted onError={() => setFailed(true)} className="w-full h-full object-cover" />
-          <Play className="absolute inset-0 m-auto w-8 h-8 text-white drop-shadow" aria-hidden />
-        </>
-      ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center gap-1 p-2 text-center text-[11px] text-[color:var(--t-muted)]">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Publishing. This takes 1 to 2 minutes.
-        </div>
+    <div className={`relative aspect-square rounded-lg overflow-hidden border bg-[color:var(--t-card)] ${status === 'shown' ? 'border-[color:var(--t-border)]' : 'border-dashed border-[color:var(--t-borderstrong)]'}`}>
+      <div className={status === 'shown' ? '' : 'opacity-50'}>
+        {item.type === 'image' && !failed ? (
+          <img src={src} alt={item.caption || 'Build photo'} loading="lazy" onError={() => setFailed(true)} className="w-full h-full aspect-square object-cover" />
+        ) : item.type === 'video' && !failed ? (
+          <>
+            <video src={src} preload="metadata" muted onError={() => setFailed(true)} className="w-full h-full aspect-square object-cover" />
+            <Play className="absolute inset-0 m-auto w-8 h-8 text-white drop-shadow" aria-hidden />
+          </>
+        ) : (
+          <div className="w-full h-full aspect-square flex flex-col items-center justify-center gap-1 p-2 text-center text-[11px] text-[color:var(--t-muted)]">
+            <TriangleAlert className="w-4 h-4" />
+            Preview not available
+          </div>
+        )}
+      </div>
+      {status !== 'shown' && (
+        <span className="absolute left-1.5 top-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+          {status === 'hidden' ? 'Hidden' : 'Archived'}
+        </span>
       )}
-      <div className="absolute inset-x-0 bottom-0 p-1.5 flex justify-end bg-gradient-to-t from-black/70 to-transparent">
+      {isCover && status === 'shown' && (
+        <span className="absolute left-1.5 top-1.5 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-black">Cover</span>
+      )}
+      <div className="absolute inset-x-0 bottom-0 p-1.5 flex flex-wrap justify-end gap-1 bg-gradient-to-t from-black/70 to-transparent">
         {confirm ? (
           <span className="flex gap-1">
-            <button disabled={busy} onClick={onRemove} className="px-2 py-1 text-[11px] font-semibold rounded bg-red-600 text-white">
-              Remove
+            <button disabled={busy} onClick={onDelete} className="px-2 py-1 text-[11px] font-semibold rounded bg-red-600 text-white">
+              Delete for good
             </button>
             <button onClick={() => setConfirm(false)} className="px-2 py-1 text-[11px] rounded bg-black/60 text-white">
               Keep
             </button>
           </span>
         ) : (
-          <button
-            onClick={() => setConfirm(true)}
-            aria-label="Remove this file"
-            className="p-1.5 rounded bg-black/60 text-white hover:bg-red-600 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <>
+            {status !== 'archived' && (
+              <>
+                <IconButton label={status === 'shown' ? 'Hide from the website' : 'Show on the website'} onClick={() => onStatus(status === 'shown' ? 'hidden' : 'shown')} disabled={busy}>
+                  {status === 'shown' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                </IconButton>
+                {item.type === 'image' && status === 'shown' && (
+                  <IconButton label="Use as the cover photo" onClick={onCover} disabled={busy || isCover} active={isCover}>
+                    <Star className="w-3.5 h-3.5" />
+                  </IconButton>
+                )}
+              </>
+            )}
+            <IconButton label={status === 'archived' ? 'Restore' : 'Archive'} onClick={() => onStatus(status === 'archived' ? 'hidden' : 'archived')} disabled={busy}>
+              {status === 'archived' ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+            </IconButton>
+            <IconButton label="Delete for good" danger onClick={() => setConfirm(true)}>
+              <Trash2 className="w-3.5 h-3.5" />
+            </IconButton>
+          </>
         )}
       </div>
     </div>
@@ -79,7 +138,8 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
   const [manifest, setManifest] = useState<MediaManifest | null>(null);
   const [loadError, setLoadError] = useState('');
   const [selectedId, setSelectedId] = useState<string | 'new'>('new');
-  const [draft, setDraft] = useState({ title: '', platform: 'mm540', year: '', story: '' });
+  const [draft, setDraft] = useState<{ title: string; platform: string; year: string; story: string; status: MediaStatus }>({ title: '', platform: 'mm540', year: '', story: '', status: 'shown' });
+  const [view, setView] = useState<'active' | 'archived'>('active');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -114,9 +174,10 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
         platform: selected.platform,
         year: selected.year ? String(selected.year) : '',
         story: selected.story,
+        status: statusOf(selected),
       });
     } else {
-      setDraft({ title: '', platform: 'mm540', year: '', story: '' });
+      setDraft({ title: '', platform: 'mm540', year: '', story: '', status: 'shown' });
     }
     if (justSaved.current) {
       justSaved.current = false; // keep the "saved" message after selecting the new build
@@ -138,11 +199,12 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
         platform: draft.platform,
         year: Number.isInteger(yearNum) ? yearNum : null,
         story: draft.story,
+        status: draft.status,
       });
       setManifest(r.manifest);
       if (r.id !== selectedId) justSaved.current = true;
       setSelectedId(r.id);
-      setMessage({ kind: 'ok', text: 'Build saved. Add photos and videos below.' });
+      setMessage({ kind: 'ok', text: draft.status === 'shown' ? 'Saved.' : `Saved. ${BUILD_STATUS_LABEL[draft.status]}.` });
     } catch (err) {
       handleError(err, 'Could not save the build.');
     } finally {
@@ -163,7 +225,12 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
       const f = list[i];
       const key = items[i].key;
       try {
-        const blob = await prepareFile(f);
+        let blob = await prepareFile(f);
+        if (!blob.type) {
+          const ext = f.name.split('.').pop()?.toLowerCase() || '';
+          const guess: Record<string, string> = { mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+          blob = new Blob([blob], { type: guess[ext] || '' });
+        }
         patch(key, { state: 'uploading' });
         const r = await uploadMedia(selected.id, blob, '', (p) => patch(key, { progress: p }));
         setManifest(r.manifest);
@@ -193,6 +260,32 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
     }
   };
 
+  const handleFileStatus = async (path: string, status: MediaStatus) => {
+    if (!selected) return;
+    setBusy(true);
+    try {
+      const r = await updateMedia(selected.id, path, { status });
+      setManifest(r.manifest);
+    } catch (err) {
+      handleError(err, 'Could not change that file.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCover = async (path: string) => {
+    if (!selected) return;
+    setBusy(true);
+    try {
+      const r = await updateMedia(selected.id, path, { cover: true });
+      setManifest(r.manifest);
+    } catch (err) {
+      handleError(err, 'Could not set the cover.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleRemoveBuild = async () => {
     if (!selected) return;
     setBusy(true);
@@ -213,7 +306,7 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
         <TriangleAlert className="w-4 h-4 text-[color:var(--t-accent)] mt-0.5 shrink-0" />
         <span>
           {/not set up/i.test(loadError)
-            ? 'Photo and video uploads are not switched on yet. Staff login works; uploads will appear here once photo storage is connected.'
+            ? 'Photo and video storage is not connected yet. Staff login works; this page will work once the R2 bucket is created and the staff API is redeployed (see docs/MEDIA_R2.md).'
             : `Could not load builds: ${loadError}`}
         </span>
       </div>
@@ -250,7 +343,9 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
                 }`}
               >
                 <span className="block font-medium text-[color:var(--t-fg)] truncate">{b.title}</span>
-                <span className="block text-xs text-[color:var(--t-dim)]">{b.media.length} files</span>
+                <span className="block text-xs text-[color:var(--t-dim)]">
+                  {b.media.length} files{statusOf(b) !== 'shown' ? ` · ${statusOf(b) === 'hidden' ? 'hidden' : 'archived'}` : ''}
+                </span>
               </button>
             </li>
           ))}
@@ -293,6 +388,14 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
               onChange={(e) => setDraft({ ...draft, story: e.target.value })}
               placeholder="Di Turbo engine swap, shackle reversal, new 31 inch mud tyres." />
           </div>
+          <div>
+            <label className={label} htmlFor="mb-status">Visibility on the website</label>
+            <select id="mb-status" className={field} value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value as MediaStatus })}>
+              {(Object.keys(BUILD_STATUS_LABEL) as MediaStatus[]).map((k) => (
+                <option key={k} value={k}>{BUILD_STATUS_LABEL[k]}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-black disabled:opacity-50">
               {saving ? 'Saving' : selected ? 'Save changes' : 'Create build'}
@@ -322,7 +425,7 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
                 onChange={(e) => handleFiles(e.target.files)} aria-label="Choose photos or videos" />
             </div>
             <p className="text-xs text-[color:var(--t-dim)]">
-              Photos are shrunk automatically. Videos: MP4 or WebM, up to 10 MB (about 15 to 20 seconds from a phone). New files appear on the website 1 to 2 minutes after upload.
+              Photos are shrunk automatically. Videos can be full quality: MP4, MOV or WebM, up to 1 GB each. Large videos upload in pieces, so keep this page open until the bar finishes. Files show on the website right away unless you hide them.
             </p>
 
             {queue.length > 0 && (
@@ -346,17 +449,43 @@ export const StaffMediaManager: React.FC<Props> = ({ onSignedOut }) => {
               </ul>
             )}
 
-            {selected.media.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-[color:var(--t-borderstrong)] p-8 text-center text-sm text-[color:var(--t-muted)]">
-                No files yet. Add the first photo of the finished vehicle.
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
-                {selected.media.map((m) => (
-                  <Thumb key={m.path} item={m} busy={busy} onRemove={() => handleRemoveFile(m.path)} />
-                ))}
-              </div>
-            )}
+            {(() => {
+              const active = selected.media.filter((m) => statusOf(m) !== 'archived');
+              const archived = selected.media.filter((m) => statusOf(m) === 'archived');
+              const list = view === 'active' ? active : archived;
+              const coverPath = selected.media.find((m) => statusOf(m) === 'shown' && m.type === 'image')?.path;
+              return (
+                <>
+                  <div className="flex gap-2" role="tablist" aria-label="Files">
+                    {([['active', `Active (${active.length})`], ['archived', `Archived (${archived.length})`]] as const).map(([k, text]) => (
+                      <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${view === k ? 'bg-amber-500 text-black' : 'bg-[color:var(--t-card)] text-[color:var(--t-muted)]'}`}>
+                        {text}
+                      </button>
+                    ))}
+                  </div>
+                  {list.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-[color:var(--t-borderstrong)] p-8 text-center text-sm text-[color:var(--t-muted)]">
+                      {view === 'active' ? 'No files yet. Add the first photo of the finished vehicle.' : 'Nothing archived. Archived files are kept but never shown on the website.'}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                      {list.map((m) => (
+                        <Thumb
+                          key={m.path}
+                          item={m}
+                          busy={busy}
+                          isCover={m.path === coverPath}
+                          onStatus={(st) => handleFileStatus(m.path, st)}
+                          onCover={() => handleCover(m.path)}
+                          onDelete={() => handleRemoveFile(m.path)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>

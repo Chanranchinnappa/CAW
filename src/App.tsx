@@ -19,6 +19,7 @@ import { Footer } from './components/Footer';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { INITIAL_WORKSHOP_PIPELINE } from './data/cawData';
 import { PipelineBuild } from './types';
+import { fetchPipeline, savePipeline } from './lib/staffApi';
 
 export default function App() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -70,6 +71,25 @@ export default function App() {
     return INITIAL_WORKSHOP_PIPELINE;
   });
 
+  const [pipelineSync, setPipelineSync] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  // The shared board (saved by staff) replaces whatever this browser remembered.
+  useEffect(() => {
+    let live = true;
+    fetchPipeline().then((remote) => {
+      if (!live || !remote) return;
+      setPipeline(remote as PipelineBuild[]);
+      try {
+        localStorage.setItem('caw_workshop_pipeline', JSON.stringify(remote));
+      } catch (e) {
+        // ignore
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
   const handleUpdatePipeline = (newPipeline: PipelineBuild[]) => {
     setPipeline(newPipeline);
     try {
@@ -77,6 +97,10 @@ export default function App() {
     } catch (e) {
       // ignore
     }
+    setPipelineSync('saving');
+    savePipeline(newPipeline)
+      .then(() => setPipelineSync('saved'))
+      .catch(() => setPipelineSync('error'));
   };
 
   const handleOpenBooking = (serviceTitle?: string) => {
@@ -94,7 +118,7 @@ export default function App() {
       <MotionConfig reducedMotion="user">
         <div className="bg-[color:var(--t-page)] text-[color:var(--t-fg)] font-sans selection:bg-amber-500 selection:text-black">
           <ErrorBoundary label="The staff page" onReset={leaveStaff}>
-            <WorkshopAdminPortal onClose={leaveStaff} pipeline={pipeline} onUpdatePipeline={handleUpdatePipeline} />
+            <WorkshopAdminPortal onClose={leaveStaff} pipeline={pipeline} onUpdatePipeline={handleUpdatePipeline} pipelineSync={pipelineSync} />
           </ErrorBoundary>
         </div>
       </MotionConfig>

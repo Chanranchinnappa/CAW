@@ -1,0 +1,6 @@
+{
+  "name": "Coorg Auto Works | Bespoke 4x4 Builds & Precision Engineering",
+  "description": "Coorg Auto Works (CAW) in Matturu, Kodagu. Precision engine overhauls, custom off-road fabrication, restorations for Mahindra MM540, Bolero, Tata Safari, and Gypsy.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

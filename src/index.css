@@ -9,8 +9,8 @@
 
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    background-color: #0b0e14;
-    color: #f1f5f9;
+    background-color: var(--t-page);
+    color: var(--t-fg);
   }
 }
 
@@ -29,38 +29,89 @@
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0e14;
+  background: var(--t-page);
 }
 ::-webkit-scrollbar-thumb {
-  background: #262c36;
+  background: var(--t-borderstrong);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b4252;
+  background: var(--t-dim);
 }
 
-/* ---------- Configurator theme tokens (dark default, light on request) ---------- */
-.cfg-root,
-.cfg-root[data-cfg-theme="dark"] {
-  --cfg-bg: #0e121a; --cfg-panel: #121620; --cfg-panel2: #141822;
-  --cfg-card: rgb(23 23 23 / 0.6); --cfg-cardsel: rgb(38 38 38 / 0.9);
-  --cfg-raised: #262626; --cfg-raisedhover: #404040;
-  --cfg-fg: #ffffff; --cfg-fg2: #d4d4d4; --cfg-muted: #a3a3a3; --cfg-dim: #737373;
-  --cfg-accent: #f59e0b; --cfg-accent2: #fbbf24;
-  --cfg-border: #262626; --cfg-borderstrong: #404040;
-  --cfg-good: #34d399; --cfg-goodbg: #022c22; --cfg-goodborder: #065f46;
-  --cfg-warnbg: rgb(69 26 3 / 0.25); --cfg-warnborder: rgb(180 83 9 / 0.5); --cfg-warnfg: #fef3c7;
+
+/* ---------- Site theme tokens ----------
+   Dark: workshop at night. Light: primer-grey steel with a rust accent. */
+:root, :root[data-theme="dark"] {
+  --t-page: #0b0e14; --t-page2: #080b0f; --t-bg: #0e121a;
+  --t-panel: #121620; --t-panel2: #141822;
+  --t-card: rgb(23 23 23 / 0.6); --t-cardsel: rgb(38 38 38 / 0.9);
+  --t-raised: #262626; --t-raisedhover: #404040;
+  --t-fg: #ffffff; --t-fg2: #d4d4d4; --t-muted: #a3a3a3; --t-dim: #737373;
+  --t-accent: #f59e0b; --t-accent2: #fbbf24;
+  --t-border: #262626; --t-borderstrong: #404040;
+  --t-good: #34d399; --t-goodbg: #022c22; --t-goodborder: #065f46;
+  --t-warnbg: rgb(69 26 3 / 0.25); --t-warnborder: rgb(180 83 9 / 0.5); --t-warnfg: #fef3c7;
+  --t-stage: #090c12;
   color-scheme: dark;
 }
-.cfg-root[data-cfg-theme="light"] {
-  --cfg-bg: #f3efe6; --cfg-panel: #ffffff; --cfg-panel2: #faf7f0;
-  --cfg-card: #f6f2e8; --cfg-cardsel: #fff6e0;
-  --cfg-raised: #ebe5d6; --cfg-raisedhover: #ddd5c0;
-  --cfg-fg: #1b1f27; --cfg-fg2: #343a46; --cfg-muted: #566070; --cfg-dim: #6b7383;
-  --cfg-accent: #b45309; --cfg-accent2: #92400e;
-  --cfg-border: #ddd5c2; --cfg-borderstrong: #c4b99d;
-  --cfg-good: #047857; --cfg-goodbg: #d1fae5; --cfg-goodborder: #6ee7b7;
-  --cfg-warnbg: #fff4dc; --cfg-warnborder: #e0a63a; --cfg-warnfg: #5b3a05;
+:root[data-theme="light"] {
+  --t-page: #e6e8e3; --t-page2: #dcdfd8; --t-bg: #eceee9;
+  --t-panel: #f7f8f5; --t-panel2: #f1f3ee;
+  --t-card: #eceee8; --t-cardsel: #fff3dc;
+  --t-raised: #dde0d8; --t-raisedhover: #cdd1c7;
+  --t-fg: #14181c; --t-fg2: #2c333a; --t-muted: #4b545c; --t-dim: #66707a;
+  --t-accent: #a84a00; --t-accent2: #8a3d00;
+  --t-border: #cbcfc5; --t-borderstrong: #aeb4a8;
+  --t-good: #047857; --t-goodbg: #d1fae5; --t-goodborder: #6ee7b7;
+  --t-warnbg: #fff1d6; --t-warnborder: #d99a2b; --t-warnfg: #5b3a05;
+  --t-stage: #090c12;
   color-scheme: light;
 }
-.cfg-root { transition: background-color .25s ease; }
+html { background-color: var(--t-page); }
+body, header, footer, section { transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+@media (prefers-reduced-motion: reduce) {
+  body, header, footer, section { transition: none; }
+}
+
+/* Areas that sit on photos or dark stages keep the dark palette in either theme */
+.on-dark, :root[data-theme="light"] .on-dark {
+  --t-page: #0b0e14; --t-page2: #080b0f; --t-bg: #0e121a;
+  --t-panel: #121620; --t-panel2: #141822;
+  --t-card: rgb(23 23 23 / 0.6); --t-cardsel: rgb(38 38 38 / 0.9);
+  --t-raised: #262626; --t-raisedhover: #404040;
+  --t-fg: #ffffff; --t-fg2: #d4d4d4; --t-muted: #a3a3a3; --t-dim: #737373;
+  --t-accent: #f59e0b; --t-accent2: #fbbf24;
+  --t-border: #262626; --t-borderstrong: #404040;
+  --t-good: #34d399; --t-goodbg: #022c22; --t-goodborder: #065f46;
+  --t-warnbg: rgb(69 26 3 / 0.25); --t-warnborder: rgb(180 83 9 / 0.5); --t-warnfg: #fef3c7;
+  --t-stage: #090c12;
+  color-scheme: dark;
+}
+
+
+/* ---------- Motion layer ---------- */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: clip; }
+
+.marquee-word {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 900;
+  font-size: clamp(3rem, 9vw, 8rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--t-borderstrong);
+}
+
+::selection { background: var(--t-accent); color: #000; }
+
+/* Keyboard focus is always visible */
+:focus-visible { outline-offset: 2px; }
+
+@keyframes caw-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes caw-rise { from { opacity: 0; transform: translateY(28px) scale(.97); } to { opacity: 1; transform: none; } }
+.caw-fade-in { animation: caw-fade .3s ease-out both; }
+.caw-rise-in { animation: caw-rise .55s cubic-bezier(.22,1,.36,1) both; }
+@media (prefers-reduced-motion: reduce) { .caw-fade-in, .caw-rise-in { animation: none; } }

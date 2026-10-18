@@ -119,15 +119,24 @@ const has = (list: { id: string }[], id: string) => list.some((x) => x.id === id
 export const getPlatform = (id: VehiclePlatformId): VehiclePlatform =>
   VEHICLE_PLATFORMS.find((p) => p.id === id) || VEHICLE_PLATFORMS[0];
 
+/** Colour a roof starts with: the matching one for sand canvas, otherwise the first offered. */
+export const resolveTopColor = (topId: string, colorId?: string) => {
+  const top = TOP_OPTIONS.find((t) => t.id === topId);
+  const cols = top?.colors ?? [];
+  if (!cols.length) return undefined;
+  return cols.find((c) => c.id === colorId) || (topId === 'canvas-sand' ? cols.find((c) => c.id === 'sand') : undefined) || cols[0];
+};
+
 export const serializeConfig = (c: ConfiguratorState): string =>
-  [c.platformId, c.paintId, c.topId, c.suspensionId, c.wheelId, c.selectedArmorIds.join('+'), c.interiorId].join('~');
+  [c.platformId, c.paintId, `${c.topId}.${resolveTopColor(c.topId, c.topColorId)?.id ?? ''}`, c.suspensionId, c.wheelId, c.selectedArmorIds.join('+'), c.interiorId].join('~');
 
 /** Returns a fully valid config, or null if the string is missing or malformed. */
 export const parseConfig = (raw: string | null | undefined): ConfiguratorState | null => {
   if (!raw) return null;
   const parts = raw.split('~');
   if (parts.length !== 7) return null;
-  const [platformId, paintId, topId, suspensionId, wheelId, armorRaw, interiorId] = parts;
+  const [platformId, paintId, topRaw, suspensionId, wheelId, armorRaw, interiorId] = parts;
+  const [topId, topColorRaw] = topRaw.split('.');
   if (!has(VEHICLE_PLATFORMS, platformId)) return null;
   if (!has(PAINT_OPTIONS, paintId)) return null;
   if (!has(TOP_OPTIONS, topId)) return null;
@@ -140,6 +149,7 @@ export const parseConfig = (raw: string | null | undefined): ConfiguratorState |
     platformId: platformId as VehiclePlatformId,
     paintId,
     topId,
+    topColorId: resolveTopColor(topId, topColorRaw)?.id,
     suspensionId,
     wheelId,
     selectedArmorIds: Array.from(new Set(armorIds)),
@@ -155,7 +165,7 @@ export const configsEqual = (a: ConfiguratorState, b: ConfiguratorState): boolea
 export const countChanges = (c: ConfiguratorState, base: ConfiguratorState): number => {
   let n = 0;
   if (c.paintId !== base.paintId) n++;
-  if (c.topId !== base.topId) n++;
+  if (c.topId !== base.topId || resolveTopColor(c.topId, c.topColorId)?.id !== resolveTopColor(base.topId, base.topColorId)?.id) n++;
   if (c.suspensionId !== base.suspensionId) n++;
   if (c.wheelId !== base.wheelId) n++;
   if (c.interiorId !== base.interiorId) n++;

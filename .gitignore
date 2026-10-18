@@ -6,3 +6,10 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Cloudflare Worker local files
+.dev.vars
+.wrangler/
+
+# Private notes
+PENDING.md

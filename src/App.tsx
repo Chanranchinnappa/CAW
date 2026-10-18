@@ -5,15 +5,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { Hero } from './components/Hero';
+import { MotionConfig } from 'motion/react';
+import { Hero, ProofBand } from './components/Hero';
+import { SmoothScroll } from './motion/SmoothScroll';
+import { ScrollProgress } from './motion/primitives';
 import { ServicesSection } from './components/ServicesSection';
 import { ShowcaseSection } from './components/ShowcaseSection';
 import { PipelineSection } from './components/PipelineSection';
-import { ConfiguratorStudio } from './components/ConfiguratorStudio';
 import { WorkshopLocation } from './components/WorkshopLocation';
 import { ServiceInquiryModal } from './components/ServiceInquiryModal';
 import { WorkshopAdminPortal } from './components/WorkshopAdminPortal';
 import { Footer } from './components/Footer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { INITIAL_WORKSHOP_PIPELINE } from './data/cawData';
 import { PipelineBuild } from './types';
 
@@ -53,7 +56,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0e14] text-neutral-100 flex flex-col font-sans selection:bg-amber-500 selection:text-black">
+    <MotionConfig reducedMotion="user">
+    <SmoothScroll />
+    <ScrollProgress />
+    <div className="min-h-screen bg-[color:var(--t-page)] text-[color:var(--t-fg)] flex flex-col font-sans selection:bg-amber-500 selection:text-black">
       {/* Top Navigation Bar */}
       <Header
         onOpenBooking={() => handleOpenBooking()}
@@ -64,6 +70,7 @@ export default function App() {
       <main className="flex-1">
         {/* Hero Section with Value Proposition & Trust Metrics Strip */}
         <Hero onOpenBooking={() => handleOpenBooking()} />
+        <ProofBand />
 
         {/* Core Services Bento Grid with Numbered Cards */}
         <ServicesSection onSelectService={(service) => handleOpenBooking(service)} />
@@ -76,9 +83,6 @@ export default function App() {
           pipeline={pipeline}
           onOpenAdminPortal={() => setIsAdminOpen(true)}
         />
-
-        {/* The 4x4 Bespoke Configurator Studio (Expanded with Commander, Major MDI, Vintage Modern Paint Atelier) */}
-        <ConfiguratorStudio onBookService={(platform) => handleOpenBooking(`Custom Build: ${platform}`)} />
 
         {/* Workshop Facility, Directions & Emergency Contact Hub */}
         <WorkshopLocation
@@ -98,12 +102,15 @@ export default function App() {
       />
 
       {/* Background Operations Portal (Protected for workshop staff to update bays, voice logs & questionnaire) */}
-      <WorkshopAdminPortal
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        pipeline={pipeline}
-        onUpdatePipeline={handleUpdatePipeline}
-      />
+      <ErrorBoundary label="The staff portal" onReset={() => setIsAdminOpen(false)}>
+        <WorkshopAdminPortal
+          isOpen={isAdminOpen}
+          onClose={() => setIsAdminOpen(false)}
+          pipeline={pipeline}
+          onUpdatePipeline={handleUpdatePipeline}
+        />
+      </ErrorBoundary>
     </div>
+    </MotionConfig>
   );
 }

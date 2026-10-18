@@ -59,39 +59,36 @@ export const VehicleBlueprintVisualizer: React.FC<VisualizerProps> = ({
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
-      {/* Studio Header Mode Switcher (3D Chassis Model vs Reference Photos) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-2">
-        <div className="flex items-center gap-2 text-xs font-mono-num text-[color:var(--cfg-muted)]">
-          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-          <span className="text-[color:var(--cfg-fg)] font-semibold uppercase">{platform.name}</span>
-          <span className="text-[color:var(--cfg-dim)]">·</span>
-          <span className="text-[color:var(--cfg-accent2)]">{paint.name}</span>
+      {/* View switcher */}
+      <div className="flex items-center justify-between gap-2">
+        <div
+          role="radiogroup"
+          aria-label="Preview type"
+          className="flex items-center gap-1 p-1 rounded-lg border border-[color:var(--t-border)] bg-[color:var(--t-card)]"
+        >
+          {([
+            ['3d-chassis', '3D model', Box],
+            ['photo-gallery', 'Photos', ImageIcon],
+          ] as const).map(([id, label, Icon]) => (
+            <button
+              key={id}
+              role="radio"
+              aria-checked={visualizerMode === id}
+              onClick={() => setVisualizerMode(id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--t-accent)] ${
+                visualizerMode === id
+                  ? 'bg-amber-500 text-black'
+                  : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)]'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
         </div>
-
-        <div className="flex items-center gap-1 bg-[color:var(--cfg-card)] p-1 rounded-xl border border-[color:var(--cfg-border)]">
-          <button
-            onClick={() => setVisualizerMode('3d-chassis')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-              visualizerMode === '3d-chassis'
-                ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
-                : 'text-[color:var(--cfg-muted)] hover:text-[color:var(--cfg-fg)]'
-            }`}
-          >
-            <Box className="w-3.5 h-3.5" />
-            <span><span className="sm:hidden">3D View</span><span className="hidden sm:inline">3D Perspective &amp; Chassis</span></span>
-          </button>
-          <button
-            onClick={() => setVisualizerMode('photo-gallery')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-              visualizerMode === 'photo-gallery'
-                ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
-                : 'text-[color:var(--cfg-muted)] hover:text-[color:var(--cfg-fg)]'
-            }`}
-          >
-            <ImageIcon className="w-3.5 h-3.5" />
-            <span><span className="sm:hidden">Photos</span><span className="hidden sm:inline">Reference Photos</span></span>
-          </button>
-        </div>
+        <span className="text-xs text-[color:var(--t-dim)] truncate">
+          {paint.name}, {paint.finish.toLowerCase()}
+        </span>
       </div>
 
       {/* Primary Display */}

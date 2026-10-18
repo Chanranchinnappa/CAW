@@ -44,6 +44,8 @@ export interface PaintOption {
   hex: string;
   finish: 'Matte Military' | 'Gloss Metallic' | 'Satin Estate' | 'Desert Textured' | 'Vintage Pastel';
   inspiration?: string;
+  /** Second colour for the gradient: the paint shifts from hex to hex2 across the panel. */
+  hex2?: string;
 }
 
 export interface TopOption {
@@ -51,6 +53,15 @@ export interface TopOption {
   name: string;
   type: 'canvas' | 'bimini' | 'hardtop' | 'expedition' | 'open-tub';
   description: string;
+  /** Colours offered for this roof. Empty when the roof is not coloured (open top). */
+  colors?: TopColor[];
+}
+
+export interface TopColor {
+  id: string;
+  name: string;
+  hex: string;
+  hex2?: string;
 }
 
 export interface SuspensionOption {
@@ -86,6 +97,7 @@ export interface ConfiguratorState {
   platformId: VehiclePlatformId;
   paintId: string;
   topId: string;
+  topColorId?: string;
   suspensionId: string;
   wheelId: string;
   selectedArmorIds: string[];

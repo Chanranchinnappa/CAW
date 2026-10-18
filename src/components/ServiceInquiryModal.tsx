@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { WORKSHOP_INFO } from '../data/cawData';
 import { X, Send, CheckCircle2, Phone, Calendar, Wrench } from 'lucide-react';
 
@@ -30,6 +30,13 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
 
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Pick up the service chosen on the page each time the form opens.
+  useEffect(() => {
+    if (isOpen) {
+      setFormData((f) => ({ ...f, serviceRequested: preselectedService || 'General 4x4 Mechanical Inspection' }));
+    }
+  }, [isOpen, preselectedService]);
 
   if (!isOpen) return null;
 
@@ -59,11 +66,11 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-[#121622] rounded-2xl border border-neutral-700 shadow-2xl p-6 sm:p-8 max-h-[95vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm caw-fade-in">
+      <div data-lenis-prevent className="caw-rise-in relative w-full max-w-lg bg-[color:var(--t-panel)] rounded-2xl border border-[color:var(--t-borderstrong)] shadow-2xl p-6 sm:p-8 max-h-[95vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 text-neutral-400 hover:text-white rounded-lg bg-neutral-800/50 hover:bg-neutral-800 transition-colors"
+          className="absolute top-5 right-5 p-2 text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] rounded-lg bg-[color:var(--t-cardsel)] hover:bg-[color:var(--t-raised)] transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -71,13 +78,13 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
         {!submitted ? (
           <div>
             <div className="pr-8">
-              <div className="text-xs font-mono-num text-amber-500 uppercase tracking-wider mb-1">
+              <div className="text-xs font-mono-num text-[color:var(--t-accent)] uppercase tracking-wider mb-1">
                 MATTURU WORKSHOP INTAKE
               </div>
-              <h3 className="text-xl font-bold text-white font-display">
+              <h3 className="text-xl font-bold text-[color:var(--t-fg)] font-display">
                 Book a Vehicle Service or Restomod Consultation
               </h3>
-              <p className="mt-1 text-xs text-neutral-400">
+              <p className="mt-1 text-xs text-[color:var(--t-muted)]">
                 Direct consultation with master technician Charan Chinnappa.
               </p>
             </div>
@@ -90,7 +97,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
 
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                <label className="block text-xs font-medium text-[color:var(--t-fg2)] mb-1">
                   Full Name *
                 </label>
                 <input
@@ -99,13 +106,13 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Biddappa Muthappa"
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  <label className="block text-xs font-medium text-[color:var(--t-fg2)] mb-1">
                     Phone / WhatsApp Number *
                   </label>
                   <input
@@ -114,11 +121,11 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="e.g. 98450 XXXXX"
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors font-mono-num"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors font-mono-num"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  <label className="block text-xs font-medium text-[color:var(--t-fg2)] mb-1">
                     Your Estate / Town
                   </label>
                   <input
@@ -128,14 +135,14 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                       setFormData({ ...formData, clientEstateLocation: e.target.value })
                     }
                     placeholder="e.g. Ponnampet / Gonikoppal"
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  <label className="block text-xs font-medium text-[color:var(--t-fg2)] mb-1">
                     Vehicle Make &amp; Model *
                   </label>
                   <input
@@ -144,11 +151,11 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                     value={formData.vehicleModel}
                     onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
                     placeholder="e.g. Mahindra MM540 4WD"
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  <label className="block text-xs font-medium text-[color:var(--t-fg2)] mb-1">
                     Manufacturing Year
                   </label>
                   <input
@@ -156,20 +163,31 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                     value={formData.vehicleYear}
                     onChange={(e) => setFormData({ ...formData, vehicleYear: e.target.value })}
                     placeholder="e.g. 1996"
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors font-mono-num"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors font-mono-num"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                <label className="block text-xs font-medium text-[color:var(--t-fg2)] mb-1">
                   Primary Service Required
                 </label>
                 <select
                   value={formData.serviceRequested}
                   onChange={(e) => setFormData({ ...formData, serviceRequested: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"
                 >
+                  {![
+                    'General 4x4 Mechanical Inspection',
+                    'Engine Overhaul & Rebuild',
+                    'Front Shackle Reversal & Suspension Lift',
+                    'Differential Re-Gearing & Locking Hubs',
+                    'Custom Bumper, Winch & Roll Cage Fabrication',
+                    'Complete Monsoon Rust Treatment & Respray',
+                    'Full Restomod Ground-Up Project',
+                  ].includes(formData.serviceRequested) && (
+                    <option value={formData.serviceRequested}>{formData.serviceRequested}</option>
+                  )}
                   <option value="General 4x4 Mechanical Inspection">
                     General 4x4 Mechanical Inspection &amp; Tuning
                   </option>
@@ -195,7 +213,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                <label className="block text-xs font-medium text-[color:var(--t-fg2)] mb-1">
                   Specific Issues or Build Vision
                 </label>
                 <textarea
@@ -203,7 +221,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Mention any mechanical symptoms (e.g. gearbox noise, overheating during crawl, rusted floor pans)..."
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500 transition-colors resize-none"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-xs sm:text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors resize-none"
                 />
               </div>
 
@@ -219,15 +237,15 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
           </div>
         ) : (
           <div className="py-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-[color:var(--t-good)] flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-7 h-7" />
             </div>
-            <h3 className="text-xl font-bold text-white font-display">
+            <h3 className="text-xl font-bold text-[color:var(--t-fg)] font-display">
               Request Received by Coorg Auto Works
             </h3>
-            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-sm mx-auto">
-              Thank you, <strong className="text-white">{formData.name}</strong>. Our workshop team in Matturu will review your {formData.vehicleModel} details and contact you at{' '}
-              <span className="font-mono-num text-amber-400">{formData.phone}</span>.
+            <p className="text-xs sm:text-sm text-[color:var(--t-fg2)] leading-relaxed max-w-sm mx-auto">
+              Thank you, <strong className="text-[color:var(--t-fg)]">{formData.name}</strong>. Our workshop team will review your {formData.vehicleModel} details and contact you at{' '}
+              <span className="font-mono-num text-[color:var(--t-accent2)]">{formData.phone}</span>.
             </p>
 
             <div className="pt-4 flex flex-col sm:flex-row gap-3">
@@ -240,7 +258,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
               </button>
               <button
                 onClick={onClose}
-                className="px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs font-medium transition-colors"
+                className="px-4 py-3 bg-[color:var(--t-raised)] hover:bg-[color:var(--t-raisedhover)] text-[color:var(--t-fg2)] rounded-lg text-xs font-medium transition-colors"
               >
                 Done
               </button>

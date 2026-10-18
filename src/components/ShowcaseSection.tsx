@@ -3,289 +3,241 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react';
 import { SHOWCASE_BUILDS } from '../data/cawData';
 import { ShowcaseBuild, VehiclePlatformId } from '../types';
-import { Check, X, ArrowRight, ShieldCheck, MapPin, Calendar, Wrench, Mountain, Info } from 'lucide-react';
+import { BuildGallery } from './BuildGallery';
+import { ArrowUpRight, X } from 'lucide-react';
+import { EASE, SectionHead } from '../motion/primitives';
 
-export const ShowcaseSection: React.FC = () => {
-  const [filter, setFilter] = useState<'all' | VehiclePlatformId>('all');
-  const [selectedBuild, setSelectedBuild] = useState<ShowcaseBuild | null>(null);
+type Filter = 'all' | VehiclePlatformId;
 
-  const filteredBuilds =
-    filter === 'all'
-      ? SHOWCASE_BUILDS
-      : SHOWCASE_BUILDS.filter((b) => b.platform === filter);
+const FILTERS: { id: Filter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'mm540', label: 'MM540' },
+  { id: 'bolero', label: 'Bolero' },
+  { id: 'safari', label: 'Safari' },
+  { id: 'gypsy', label: 'Gypsy' },
+];
+
+const BuildCard: React.FC<{ build: ShowcaseBuild; onOpen: () => void }> = ({ build, onOpen }) => (
+  <motion.button
+    layout
+    onClick={onOpen}
+    whileHover="hover"
+    initial="rest"
+    className="on-dark group relative flex h-[26rem] w-[80vw] shrink-0 snap-center flex-col justify-between overflow-hidden rounded-3xl p-6 text-left text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 sm:w-[46vw] lg:h-[min(34rem,calc(100svh-14rem))] lg:w-[30vw] lg:max-w-[28rem] lg:p-8"
+    style={{ background: `linear-gradient(155deg, ${build.accentColor} 0%, #0b0e14 78%)` }}
+  >
+    {/* Year as oversized outline type */}
+    <motion.span
+      aria-hidden="true"
+      variants={{ rest: { y: 0, scale: 1 }, hover: { y: -10, scale: 1.04 } }}
+      transition={{ duration: 0.7, ease: EASE }}
+      className="pointer-events-none absolute left-5 top-[16%] origin-top-left font-display text-[6.5rem] font-black leading-none text-transparent [-webkit-text-stroke:1px_rgb(255_255_255/0.3)] lg:left-7 lg:text-[8.5rem]"
+    >
+      {build.year}
+    </motion.span>
+
+    <span className="relative text-sm text-white/70">
+      {build.category} · {build.clientRegion}
+    </span>
+
+    <div className="relative">
+      <h3 className="font-display text-2xl font-bold leading-tight tracking-tight sm:text-3xl text-balance">{build.title}</h3>
+      <p className="mt-3 line-clamp-2 max-w-sm text-sm leading-relaxed text-white/70">{build.story}</p>
+      <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-400">
+        See the build
+        <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+      </span>
+    </div>
+
+    <span className="pointer-events-none absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/10 transition-shadow duration-500 group-hover:ring-amber-400/50" />
+  </motion.button>
+);
+
+const BuildDialog: React.FC<{ build: ShowcaseBuild; onClose: () => void }> = ({ build, onClose }) => {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
 
   return (
-    <section id="showcase" className="py-20 bg-[#0e121a] border-t border-neutral-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-          <div>
-            <div className="text-xs font-mono-num text-amber-500 uppercase tracking-wider mb-2">
-              WORKSHOP PORTFOLIO · PAST PROJECTS
-            </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white font-display">
-              Finished Restorations &amp; Custom Builds
-            </h2>
-            <p className="mt-2 text-sm sm:text-base text-neutral-400 max-w-2xl">
-              Representative examples of completed 4x4 vehicles built for local coffee estates and mountain trails. We will be updating this section with verified customer build sheets and photography.
-            </p>
-          </div>
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      onClick={onClose}
+    >
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label={build.title}
+        data-lenis-prevent
+        onClick={(e) => e.stopPropagation()}
+        initial={{ y: 60, opacity: 0, scale: 0.97 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 40, opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.55, ease: EASE }}
+        className="relative max-h-[92svh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-[color:var(--t-borderstrong)] bg-[color:var(--t-panel)] p-6 shadow-2xl sm:rounded-3xl sm:p-10"
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 rounded-full bg-[color:var(--t-raised)] p-2 text-[color:var(--t-fg2)] transition-colors hover:text-[color:var(--t-fg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+        >
+          <X className="h-5 w-5" />
+        </button>
 
-          {/* Interactive Filter Tabs */}
-          <div className="flex items-center gap-1 p-1 bg-[#141822] rounded-lg border border-neutral-800 overflow-x-auto scrollbar-none shrink-0">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-                filter === 'all'
-                  ? 'bg-amber-500 text-black font-semibold'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              All Builds
-            </button>
-            <button
-              onClick={() => setFilter('mm540')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-                filter === 'mm540'
-                  ? 'bg-amber-500 text-black font-semibold'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              Mahindra MM540
-            </button>
-            <button
-              onClick={() => setFilter('bolero')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-                filter === 'bolero'
-                  ? 'bg-amber-500 text-black font-semibold'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              Bolero 4x4
-            </button>
-            <button
-              onClick={() => setFilter('safari')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-                filter === 'safari'
-                  ? 'bg-amber-500 text-black font-semibold'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              Tata Sierra / Safari
-            </button>
-            <button
-              onClick={() => setFilter('gypsy')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-                filter === 'gypsy'
-                  ? 'bg-amber-500 text-black font-semibold'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              Maruti Gypsy
-            </button>
-          </div>
-        </div>
+        <p className="pr-10 text-sm text-[color:var(--t-accent)]">
+          {build.category} · {build.clientRegion} · {build.year}
+        </p>
+        <h3 className="mt-2 pr-10 font-display text-3xl font-extrabold leading-tight tracking-tight text-[color:var(--t-fg)] text-balance">
+          {build.title}
+        </h3>
+        <p className="mt-5 text-base leading-relaxed text-[color:var(--t-fg2)]">{build.story}</p>
 
-        {/* Notice Strip */}
-        <div className="mb-8 p-3 rounded-xl bg-neutral-900/80 border border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
-          <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-amber-500 shrink-0" />
-            <span>
-              <strong className="text-neutral-300">Sample Showcase:</strong> Vehicle specs shown below are examples. Official workshop build records and verified owner spec sheets will replace these.
-            </span>
-          </div>
-          <span className="text-[11px] font-mono-num text-neutral-500 hidden sm:inline">
-            CAW ARCHIVE
-          </span>
-        </div>
-
-        {/* Builds Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {filteredBuilds.map((build) => (
-            <div
-              key={build.id}
-              className="flex flex-col justify-between rounded-xl border border-neutral-800 bg-[#121620] overflow-hidden group hover:border-neutral-700 transition-all duration-200"
-            >
-              <div>
-                {/* Visual Header / Diagram */}
-                <div className="relative aspect-[16/9] bg-gradient-to-br from-[#161b26] to-[#0c0f16] p-6 flex flex-col justify-between border-b border-neutral-800">
-                  {/* Metadata Header */}
-                  <div className="flex items-center justify-between text-xs font-mono-num text-neutral-400">
-                    <span className="text-amber-500 font-semibold">{build.category}</span>
-                    <span>{build.clientRegion}</span>
-                  </div>
-
-                  {/* Clean Visual Badge & Title */}
-                  <div className="my-auto flex items-center justify-center">
-                    <div className="text-center">
-                      <div
-                        className="inline-block px-3 py-1 rounded text-xs font-mono-num font-bold text-white border border-neutral-700 mb-2"
-                        style={{ backgroundColor: `${build.accentColor}cc` }}
-                      >
-                        {build.year} · {build.platform.toUpperCase()}
-                      </div>
-                      <div className="text-xl sm:text-2xl font-bold text-white font-display">
-                        {build.title}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Clean status strip */}
-                  <div className="flex items-center justify-between text-[11px] font-mono-num text-neutral-400">
-                    <span>{build.platform.toUpperCase()} 4WD</span>
-                    <span>Full Restoration</span>
-                  </div>
-                </div>
-
-                {/* Card Content - Clean, jargon-free */}
-                <div className="p-6">
-                  <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
-                    {build.story}
-                  </p>
-
-                  {/* Clean Key Highlights */}
-                  <div className="mt-4 pt-4 border-t border-neutral-800/70 space-y-2">
-                    <span className="text-[11px] font-mono-num uppercase text-neutral-500 block">
-                      Build Highlights
-                    </span>
-                    <div className="flex items-start gap-2 text-xs text-neutral-300">
-                      <Check className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                      <span>Complete chassis rust cleanup and protective painting</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-xs text-neutral-300">
-                      <Check className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                      <span>Raised suspension &amp; off-road tyres for muddy estate climbs</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-xs text-neutral-300">
-                      <Check className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                      <span>Heavy-duty steel bumper and recovery winch fitted</span>
-                    </div>
-                  </div>
-
-                  {/* Terrain Note */}
-                  <div className="mt-4 p-3 rounded-lg bg-neutral-900/60 border border-neutral-800/80 text-xs text-neutral-300 flex items-start gap-2">
-                    <Mountain className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>
-                      <strong className="text-neutral-200">Estate Road Trial:</strong> Built to handle steep mud slopes and wet harvest trails with confidence.
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action */}
-              <div className="p-6 pt-0">
-                <button
-                  onClick={() => setSelectedBuild(build)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-neutral-800/80 hover:bg-neutral-800 text-white rounded-lg text-xs font-semibold border border-neutral-700 transition-colors"
-                >
-                  <span>View Project Details</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+        <ul className="mt-6 space-y-2.5 border-t border-[color:var(--t-border)] pt-6">
+          {build.specs.map((s) => (
+            <li key={s} className="flex gap-3 text-sm text-[color:var(--t-fg2)]">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rotate-45 bg-[color:var(--t-accent)]" />
+              {s}
+            </li>
           ))}
-        </div>
+        </ul>
 
-        {/* Modal: Detailed Build Inspection */}
-        {selectedBuild && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="relative w-full max-w-2xl bg-[#121622] rounded-2xl border border-neutral-700 shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
-              {/* Close Button */}
-              <button
-                onClick={() => setSelectedBuild(null)}
-                className="absolute top-5 right-5 p-2 text-neutral-400 hover:text-white rounded-lg bg-neutral-800/50 hover:bg-neutral-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+        <dl className="mt-6 grid grid-cols-1 gap-4 rounded-2xl bg-[color:var(--t-card)] p-5 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-[color:var(--t-dim)]">Engine</dt>
+            <dd className="mt-0.5 text-[color:var(--t-fg2)]">{build.engine}</dd>
+          </div>
+          <div>
+            <dt className="text-[color:var(--t-dim)]">Transmission</dt>
+            <dd className="mt-0.5 text-[color:var(--t-fg2)]">{build.transmission}</dd>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="text-[color:var(--t-dim)]">On the trail</dt>
+            <dd className="mt-0.5 text-[color:var(--t-fg2)]">{build.terrainNotes}</dd>
+          </div>
+        </dl>
+      </motion.div>
+    </motion.div>
+  );
+};
 
-              {/* Header */}
-              <div className="pr-10">
-                <div className="flex items-center gap-2 text-xs font-mono-num text-amber-500 mb-1">
-                  <span>{selectedBuild.category}</span>
-                  <span>·</span>
-                  <span>{selectedBuild.clientRegion}</span>
-                  <span>·</span>
-                  <span>BUILT {selectedBuild.year}</span>
-                </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-white font-display">
-                  {selectedBuild.title}
-                </h3>
-              </div>
+export const ShowcaseSection: React.FC = () => {
+  const [filter, setFilter] = useState<Filter>('all');
+  const [selected, setSelected] = useState<ShowcaseBuild | null>(null);
+  const builds = filter === 'all' ? SHOWCASE_BUILDS : SHOWCASE_BUILDS.filter((b) => b.platform === filter);
 
-              {/* Build Story */}
-              <div className="mt-5 text-xs sm:text-sm text-neutral-300 leading-relaxed">
-                {selectedBuild.story}
-              </div>
+  // Desktop: the section pins while the row of builds slides sideways with your scroll.
+  const outerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [travel, setTravel] = useState(0);
+  const [pinned, setPinned] = useState(false);
 
-              {/* Work Carried Out - Simple, clear language */}
-              <div className="mt-6 pt-6 border-t border-neutral-800">
-                <h4 className="text-xs font-mono-num uppercase tracking-wider text-neutral-400 mb-3">
-                  Summary of Work Carried Out
-                </h4>
-                <div className="space-y-2.5">
-                  <div className="flex items-start gap-2.5 text-xs text-neutral-200">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                    <span>Complete chassis teardown, rust treatment, and high-durability paint</span>
-                  </div>
-                  <div className="flex items-start gap-2.5 text-xs text-neutral-200">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                    <span>Full engine overhaul tuned for mountain torque and cooling</span>
-                  </div>
-                  <div className="flex items-start gap-2.5 text-xs text-neutral-200">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                    <span>Suspension lifted and tuned for rough coffee estate paths</span>
-                  </div>
-                  <div className="flex items-start gap-2.5 text-xs text-neutral-200">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                    <span>Custom heavy-duty front steel bumper with electric recovery winch</span>
-                  </div>
-                  <div className="flex items-start gap-2.5 text-xs text-neutral-200">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                    <span>Waterproof army-grade canvas canopy with roll-up sides</span>
-                  </div>
-                </div>
-              </div>
+  useLayoutEffect(() => {
+    const measure = () => {
+      const lg = window.matchMedia('(min-width: 1024px)').matches;
+      setPinned(lg);
+      if (lg && trackRef.current) {
+        setTravel(Math.max(0, trackRef.current.scrollWidth - window.innerWidth));
+      } else {
+        setTravel(0);
+      }
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (trackRef.current) ro.observe(trackRef.current);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [builds.length]);
 
-              {/* Simple Details Grid */}
-              <div className="mt-6 grid grid-cols-2 gap-3 p-4 bg-neutral-900/80 rounded-xl border border-neutral-800 text-xs font-mono-num">
-                <div>
-                  <span className="text-neutral-500 block">Drive System</span>
-                  <span className="text-neutral-200 font-medium">4WD High &amp; Low Range</span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block">Fuel Type</span>
-                  <span className="text-neutral-200 font-medium">Diesel / Petrol</span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block">Scope of Work</span>
-                  <span className="text-neutral-200 font-medium">Full Restoration</span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block">Location Tested</span>
-                  <span className="text-neutral-200 font-medium">{selectedBuild.clientRegion}</span>
-                </div>
-              </div>
+  const { scrollYProgress } = useScroll({ target: outerRef, offset: ['start start', 'end end'] });
+  const x = useTransform(scrollYProgress, [0, 1], [0, -travel]);
+  const barScale = useTransform(scrollYProgress, [0, 1], [0.04, 1]);
 
-              {/* Estate trial note */}
-              <div className="mt-4 p-3.5 bg-neutral-900/50 rounded-xl border border-neutral-800 text-xs text-neutral-300">
-                <strong className="text-emerald-400">Tested in the Field:</strong> Thoroughly driven across Kodagu plantation mud tracks and steep rocky slopes before final handover.
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-neutral-800 flex justify-end">
+  return (
+    <section id="showcase" className="bg-[color:var(--t-bg)] pt-24 sm:pt-32 scroll-mt-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHead
+          title="Builds that left the workshop"
+          intro="Sample builds are shown until verified customer records and photos are published."
+          right={
+            <div role="tablist" aria-label="Filter builds by vehicle" className="flex w-fit items-center gap-1 rounded-full border border-[color:var(--t-border)] bg-[color:var(--t-panel2)] p-1">
+              {FILTERS.map((f) => (
                 <button
-                  onClick={() => setSelectedBuild(null)}
-                  className="px-5 py-2 text-xs font-semibold bg-neutral-800 text-neutral-200 hover:text-white rounded-lg transition-colors"
+                  key={f.id}
+                  role="tab"
+                  aria-selected={filter === f.id}
+                  onClick={() => setFilter(f.id)}
+                  className="relative rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                 >
-                  Close Details
+                  {filter === f.id && (
+                    <motion.span
+                      layoutId="showcase-filter"
+                      transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                      className="absolute inset-0 rounded-full bg-[color:var(--t-accent)]"
+                    />
+                  )}
+                  <span className={`relative transition-colors ${filter === f.id ? 'text-black' : 'text-[color:var(--t-muted)]'}`}>
+                    {f.label}
+                  </span>
                 </button>
+              ))}
+            </div>
+          }
+        />
+        <BuildGallery />
+      </div>
+
+      <div ref={outerRef} style={pinned ? { height: `calc(${travel}px + 100svh - 4rem)` } : undefined} className="relative">
+        <div className="lg:sticky lg:top-16 lg:flex lg:h-[calc(100svh-4rem)] lg:flex-col lg:justify-center lg:overflow-hidden">
+          <motion.div
+            ref={trackRef}
+            style={pinned ? { x } : undefined}
+            className="flex w-max snap-x snap-mandatory gap-5 px-4 pb-16 sm:px-6 max-lg:w-full max-lg:overflow-x-auto max-lg:[scrollbar-width:none] lg:gap-6 lg:px-[max(2rem,calc((100vw-80rem)/2+2rem))] lg:pb-0 lg:pr-24"
+          >
+            <AnimatePresence mode="popLayout" initial={false}>
+              {builds.map((b) => (
+                <motion.div
+                  key={b.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92 }}
+                  transition={{ duration: 0.5, ease: EASE }}
+                  className="shrink-0"
+                >
+                  <BuildCard build={b} onOpen={() => setSelected(b)} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+
+          {pinned && travel > 0 && (
+            <div className="mx-auto mt-10 h-px w-full max-w-7xl px-8" aria-hidden="true">
+              <div className="h-px w-full bg-[color:var(--t-border)]">
+                <motion.div style={{ scaleX: barScale }} className="h-px origin-left bg-[color:var(--t-accent)]" />
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      <AnimatePresence>{selected && <BuildDialog build={selected} onClose={() => setSelected(null)} />}</AnimatePresence>
     </section>
   );
 };

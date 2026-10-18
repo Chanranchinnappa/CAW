@@ -3,125 +3,67 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'motion/react';
 import { WORKSHOP_INFO } from '../data/cawData';
-import { Phone, MessageSquare, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 interface FooterProps {
   onOpenAdminPortal?: () => void;
 }
 
+const LINKS = [
+  { href: '#services', label: 'Services' },
+  { href: '#showcase', label: 'Builds' },
+  { href: '#pipeline', label: 'On the lifts' },
+  { href: '#workshop-facility', label: 'Visit' },
+];
+
 export const Footer: React.FC<FooterProps> = ({ onOpenAdminPortal }) => {
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end end'] });
+  const wordY = useTransform(scrollYProgress, [0, 1], ['35%', '0%']);
+
   return (
-    <footer className="bg-[#080b0f] border-t border-neutral-800 text-neutral-400 text-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          {/* Brand Info */}
-          <div className="md:col-span-2">
-            <a href="#" className="text-lg font-bold text-white font-display flex items-center gap-2 mb-3">
-              <span className="text-amber-500 font-black">CAW</span>
-              <span>COORG AUTO WORKS</span>
+    <footer ref={ref} className="relative overflow-hidden border-t border-[color:var(--t-border)] bg-[color:var(--t-page2)] text-sm text-[color:var(--t-muted)]">
+      <div className="mx-auto max-w-7xl px-4 pt-14 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
+          <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-3">
+            {LINKS.map((l) => (
+              <a key={l.href} href={l.href} className="transition-colors hover:text-[color:var(--t-fg)] focus:outline-none focus-visible:text-[color:var(--t-fg)]">
+                {l.label}
+              </a>
+            ))}
+          </nav>
+          <div className="space-y-1 md:text-right">
+            <a href={`tel:${WORKSHOP_INFO.contact.phonePrimary}`} className="block font-semibold text-[color:var(--t-fg)] hover:text-[color:var(--t-accent2)] transition-colors">
+              {WORKSHOP_INFO.contact.phoneFormatted}
             </a>
-            <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed max-w-sm">
-              Dedicated 4x4 engineering, engine overhauls, and custom chassis fabrication in Matturu, Kodagu. Preserving India&apos;s greatest rugged automobile icons for the trails of the Western Ghats.
-            </p>
-            <div className="mt-4 flex items-center gap-4 text-xs font-mono-num text-neutral-500">
-              <span>{WORKSHOP_INFO.location.village}, Ponnampet</span>
-              <span>·</span>
-              <span>Kodagu, Karnataka</span>
-            </div>
-          </div>
-
-          {/* Quick Links */}
-          <div>
-            <div className="text-white font-semibold text-xs font-mono-num uppercase tracking-wider mb-3">
-              Workshop
-            </div>
-            <ul className="space-y-2">
-              <li>
-                <a href="#services" className="hover:text-white transition-colors">
-                  Services &amp; Overhauls
-                </a>
-              </li>
-              <li>
-                <a href="#showcase" className="hover:text-white transition-colors">
-                  Finished Restorations
-                </a>
-              </li>
-              <li>
-                <a href="#pipeline" className="hover:text-white transition-colors">
-                  Active Bays Pipeline
-                </a>
-              </li>
-              <li>
-                <a href="#configurator-studio" className="text-amber-400 hover:text-amber-300 transition-colors">
-                  4x4 Configurator Studio
-                </a>
-              </li>
-              <li>
-                <a href="#workshop-facility" className="hover:text-white transition-colors">
-                  Directions &amp; Hours
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact & Emergency Support */}
-          <div>
-            <div className="text-white font-semibold text-xs font-mono-num uppercase tracking-wider mb-3">
-              Emergency &amp; Inquiries
-            </div>
-            <ul className="space-y-2.5">
-              <li>
-                <a
-                  href={`tel:${WORKSHOP_INFO.contact.phonePrimary}`}
-                  className="flex items-center gap-2 hover:text-white transition-colors"
-                >
-                  <Phone className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="font-mono-num">{WORKSHOP_INFO.contact.phoneFormatted}</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  href={`https://wa.me/${WORKSHOP_INFO.contact.whatsapp}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 hover:text-emerald-400 transition-colors"
-                >
-                  <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>WhatsApp Workshop</span>
-                </a>
-              </li>
-              <li className="pt-2 text-neutral-400 text-[11px]">
-                {WORKSHOP_INFO.contact.hours}
-              </li>
-              <li className="text-amber-500/80 text-[11px]">
-                {WORKSHOP_INFO.contact.emergencyHours}
-              </li>
-            </ul>
+            <p>{WORKSHOP_INFO.contact.hours}</p>
+            <p>{WORKSHOP_INFO.contact.emergencyHours}</p>
           </div>
         </div>
+      </div>
 
-        <div className="pt-8 border-t border-neutral-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-neutral-400">
-          <div>
-            &copy; {new Date().getFullYear()} Coorg Auto Works (CAW). All rights reserved.
-          </div>
-          <div className="flex items-center gap-4">
-            <span>Matturu, Ponnampet, Kodagu</span>
-            {onOpenAdminPortal && (
-              <>
-                <span>·</span>
-                <button
-                  onClick={onOpenAdminPortal}
-                  className="flex items-center gap-1 text-neutral-500 hover:text-amber-400 transition-colors"
-                >
-                  <Lock className="w-3 h-3" />
-                  <span>Workshop Staff Operations</span>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+      <motion.div
+        aria-hidden="true"
+        style={{ y: wordY }}
+        className="mt-12 select-none whitespace-nowrap text-center font-display text-[8.6vw] font-black leading-[0.8] tracking-tighter text-transparent [-webkit-text-stroke:1px_var(--t-borderstrong)]"
+      >
+        COORG AUTO WORKS
+      </motion.div>
+
+      <div className="relative mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs sm:flex-row sm:px-6 lg:px-8">
+        <span>&copy; {new Date().getFullYear()} Coorg Auto Works, Ponnampet, Kodagu</span>
+        {onOpenAdminPortal && (
+          <button
+            onClick={onOpenAdminPortal}
+            className="flex items-center gap-1.5 text-[color:var(--t-dim)] transition-colors hover:text-[color:var(--t-accent2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+          >
+            <Lock className="h-3 w-3" />
+            Staff login
+          </button>
+        )}
       </div>
     </footer>
   );

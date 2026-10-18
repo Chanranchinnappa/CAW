@@ -3,8 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { PipelineBuild } from '../types';
+import { StaffMediaManager } from './StaffMediaManager';
+import { ErrorBoundary } from './ErrorBoundary';
+
+// Staff-only for now: the 4x4 configurator is still being built and is not shown to customers.
+const ConfiguratorStudio = lazy(() => import('./ConfiguratorStudio').then((m) => ({ default: m.ConfiguratorStudio })));
+import { ApiError, getToken, login, signOut, staffApiConfigured } from '../lib/staffApi';
 import { WORKSHOP_MASTER_QUESTIONNAIRE, WORKSHOP_INFO } from '../data/cawData';
 import {
   Lock,
@@ -27,6 +33,7 @@ import {
   Clock,
   Sparkles,
   Sliders,
+  Images,
 } from 'lucide-react';
 
 interface AdminPortalProps {
@@ -43,14 +50,14 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
   onUpdatePipeline,
 }) => {
   // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('caw_staff_authenticated') === 'true';
-  });
-  const [pinInput, setPinInput] = useState('');
-  const [pinError, setPinError] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!getToken());
+  const [usernameInput, setUsernameInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginBusy, setLoginBusy] = useState(false);
 
   // Admin Active Tab: 'pipeline' | 'questionnaire'
-  const [activeTab, setActiveTab] = useState<'pipeline' | 'questionnaire'>('pipeline');
+  const [activeTab, setActiveTab] = useState<'pipeline' | 'media' | 'questionnaire' | 'configurator'>('pipeline');
 
   // Currently selected Bay to edit
   const [selectedBayId, setSelectedBayId] = useState<string>(pipeline[0]?.id || '');
@@ -126,22 +133,30 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
 
   if (!isOpen) return null;
 
-  // PIN Login Handler (Default workshop staff PIN: 5404)
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pinInput === '5404' || pinInput.toLowerCase() === 'caw540') {
+    setLoginBusy(true);
+    setLoginError('');
+    try {
+      await login(usernameInput, passwordInput);
       setIsAuthenticated(true);
-      localStorage.setItem('caw_staff_authenticated', 'true');
-      setPinError('');
-    } else {
-      setPinError('Incorrect workshop PIN. (Default PIN: 5404)');
+      setPasswordInput('');
+      try {
+        localStorage.removeItem('caw_staff_authenticated'); // old browser-only flag
+      } catch {
+        // ignore
+      }
+    } catch (err) {
+      setLoginError(err instanceof ApiError || err instanceof Error ? err.message : 'Sign-in failed.');
+    } finally {
+      setLoginBusy(false);
     }
   };
 
   const handleLogout = () => {
+    signOut();
     setIsAuthenticated(false);
-    localStorage.removeItem('caw_staff_authenticated');
-    setPinInput('');
+    setPasswordInput('');
   };
 
   // Toggle Voice Input
@@ -182,7 +197,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
           keyWorkItems: editChecklist,
           photos: attachedPhotos,
           voiceNotes: newVoiceNotes,
-          lastUpdated: 'Just now by Matturu staff',
+          lastUpdated: 'Just now by staff',
         };
       }
       return bay;
@@ -223,7 +238,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
   // Generate Google Form text for internal staff questionnaire
   const generateGoogleFormText = () => {
     let output = `COORG AUTO WORKS (CAW) — MASTER WORKSHOP DATA QUESTIONNAIRE\n`;
-    output += `Matturu Depot, Balale Road, Ponnampet, South Kodagu, Karnataka\n`;
+    output += `Coorg Auto Works, Balale Road, Ponnampet, South Kodagu, Karnataka\n`;
     output += `For Internal Workshop Staff & Technicians\n\n`;
 
     WORKSHOP_MASTER_QUESTIONNAIRE.forEach((section, idx) => {
@@ -249,24 +264,21 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-5xl bg-[#11151f] rounded-2xl border border-neutral-700 shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md caw-fade-in">
+      <div className={`relative w-full ${activeTab === 'configurator' ? 'max-w-7xl' : 'max-w-5xl'} bg-[color:var(--t-panel)] rounded-2xl border border-[color:var(--t-borderstrong)] shadow-2xl flex flex-col max-h-[95vh] overflow-hidden`}>
         {/* Top Operations Header */}
-        <div className="p-4 sm:p-6 border-b border-neutral-800 bg-[#141a26] flex items-center justify-between gap-4">
+        <div className="p-4 sm:p-6 border-b border-[color:var(--t-border)] bg-[color:var(--t-panel)] flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-[color:var(--t-accent)]">
               <Wrench className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono-num font-bold text-amber-500 tracking-wider uppercase">
+                <span className="text-xs font-mono-num font-bold text-[color:var(--t-accent)] tracking-wider uppercase">
                   WORKSHOP OPERATIONS &amp; MAINTAINER PORTAL
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700">
-                  Matturu Depot Staff
-                </span>
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-white font-display">
+              <h3 className="text-base sm:text-lg font-bold text-[color:var(--t-fg)] font-display">
                 Coorg Auto Works Internal Control
               </h3>
             </div>
@@ -276,7 +288,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
             {isAuthenticated && (
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs font-medium border border-neutral-700 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[color:var(--t-raised)] hover:bg-[color:var(--t-raisedhover)] text-[color:var(--t-fg2)] rounded-lg text-xs font-medium border border-[color:var(--t-borderstrong)] transition-colors"
                 title="Log Out Staff Session"
               >
                 <LogOut className="w-3.5 h-3.5 text-red-400" />
@@ -285,7 +297,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
             )}
             <button
               onClick={onClose}
-              className="p-2 text-neutral-400 hover:text-white rounded-lg bg-neutral-800/80 hover:bg-neutral-800 transition-colors"
+              className="p-2 text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] rounded-lg bg-[color:var(--t-cardsel)] hover:bg-[color:var(--t-raised)] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -295,58 +307,76 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
         {/* ----------------- LOGIN GATE SCREEN ----------------- */}
         {!isAuthenticated ? (
           <div className="p-8 sm:p-12 flex flex-col items-center justify-center text-center max-w-md mx-auto my-auto">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4 border border-amber-500/30">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-[color:var(--t-accent2)] flex items-center justify-center mb-4 border border-amber-500/30">
               <Lock className="w-7 h-7" />
             </div>
-            <h4 className="text-xl font-bold text-white font-display">
+            <h4 className="text-xl font-bold text-[color:var(--t-fg)] font-display">
               Workshop Staff Authorization
             </h4>
-            <p className="mt-2 text-xs sm:text-sm text-neutral-400 leading-relaxed">
-              Enter your workshop PIN to update active bay timelines, record voice build notes, attach photos, and access the staff questionnaire.
+            <p className="mt-2 text-xs sm:text-sm text-[color:var(--t-muted)] leading-relaxed">
+              Sign in with your staff username and password to update bays, add photos and videos of finished builds, and open the staff questionnaire.
             </p>
 
-            {pinError && (
-              <div className="mt-4 p-2.5 bg-red-950/60 border border-red-800 rounded-lg text-xs text-red-300 w-full">
-                {pinError}
+            {!staffApiConfigured() && (
+              <div className="mt-4 p-2.5 bg-[color:var(--t-warnbg)] border border-[color:var(--t-warnborder)] rounded-lg text-xs text-[color:var(--t-warnfg)] w-full">
+                Staff sign-in is not set up on this site yet. See docs/STAFF_MEDIA_SETUP.md.
+              </div>
+            )}
+            {loginError && (
+              <div role="alert" className="mt-4 p-2.5 bg-red-950/60 border border-red-800 rounded-lg text-xs text-red-300 w-full">
+                {loginError}
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="mt-6 w-full space-y-4">
+            <form onSubmit={handleLogin} className="mt-6 w-full space-y-3 text-left">
               <div>
+                <label htmlFor="staff-user" className="block text-xs font-medium text-[color:var(--t-muted)] mb-1">Username</label>
                 <input
-                  type="password"
+                  id="staff-user"
+                  type="text"
                   required
                   autoFocus
-                  value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value)}
-                  placeholder="Enter PIN (Default: 5404)"
-                  className="w-full text-center tracking-widest text-lg font-mono-num px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  className="w-full px-4 py-3 text-sm bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] rounded-xl text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label htmlFor="staff-pass" className="block text-xs font-medium text-[color:var(--t-muted)] mb-1">Password</label>
+                <input
+                  id="staff-pass"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  className="w-full px-4 py-3 text-sm bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] rounded-xl text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-md"
+                disabled={loginBusy || !staffApiConfigured()}
+                className="w-full py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-xl text-sm transition-colors shadow-md"
               >
-                Unlock Operations Console
+                {loginBusy ? 'Signing in' : 'Sign in'}
               </button>
             </form>
-
-            <div className="mt-6 text-[11px] font-mono-num text-neutral-500">
-              Coorg Auto Works · Matturu, Balale Road, Ponnampet
-            </div>
           </div>
         ) : (
           /* ----------------- AUTHENTICATED STAFF OPERATIONS CONSOLE ----------------- */
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Top Navigation Tabs */}
-            <div className="flex items-center gap-2 px-6 pt-4 pb-2 border-b border-neutral-800 bg-[#0e121a]">
+            <div className="flex items-center gap-2 px-6 pt-4 pb-2 border-b border-[color:var(--t-border)] bg-[color:var(--t-bg)]">
               <button
                 onClick={() => setActiveTab('pipeline')}
                 className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 ${
                   activeTab === 'pipeline'
                     ? 'bg-amber-500 text-black shadow-sm'
-                    : 'text-neutral-400 hover:text-white bg-neutral-900'
+                    : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] bg-[color:var(--t-card)]'
                 }`}
               >
                 <Sliders className="w-3.5 h-3.5" />
@@ -354,15 +384,38 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
               </button>
 
               <button
+                onClick={() => setActiveTab('media')}
+                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 ${
+                  activeTab === 'media'
+                    ? 'bg-amber-500 text-black shadow-sm'
+                    : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] bg-[color:var(--t-card)]'
+                }`}
+              >
+                <Images className="w-3.5 h-3.5" />
+                <span>Finished Builds: Photos &amp; Videos</span>
+              </button>
+
+              <button
                 onClick={() => setActiveTab('questionnaire')}
                 className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 ${
                   activeTab === 'questionnaire'
                     ? 'bg-amber-500 text-black shadow-sm'
-                    : 'text-neutral-400 hover:text-white bg-neutral-900'
+                    : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] bg-[color:var(--t-card)]'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>Internal Staff Questionnaire</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('configurator')}
+                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 ${
+                  activeTab === 'configurator'
+                    ? 'bg-amber-500 text-black shadow-sm'
+                    : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] bg-[color:var(--t-card)]'
+                }`}
+              >
+                <Wrench className="w-3.5 h-3.5" />
+                <span>4x4 Configurator (draft)</span>
               </button>
             </div>
 
@@ -370,8 +423,8 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
             {activeTab === 'pipeline' && (
               <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
                 {/* Left Column: Bay Selector */}
-                <div className="w-full md:w-64 bg-[#0e121a] border-r border-neutral-800 p-3 space-y-2 overflow-y-auto">
-                  <div className="text-[10px] font-mono-num uppercase text-neutral-500 px-2 py-1">
+                <div className="w-full md:w-64 bg-[color:var(--t-bg)] border-r border-[color:var(--t-border)] p-3 space-y-2 overflow-y-auto">
+                  <div className="text-[10px] font-mono-num uppercase text-[color:var(--t-dim)] px-2 py-1">
                     Select Active Bay
                   </div>
                   {pipeline.map((bay) => (
@@ -380,22 +433,22 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                       onClick={() => setSelectedBayId(bay.id)}
                       className={`w-full text-left p-3 rounded-xl transition-all ${
                         selectedBayId === bay.id
-                          ? 'bg-neutral-800 text-white font-semibold border border-neutral-700 shadow-sm'
-                          : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900'
+                          ? 'bg-[color:var(--t-raised)] text-[color:var(--t-fg)] font-semibold border border-[color:var(--t-borderstrong)] shadow-sm'
+                          : 'text-[color:var(--t-muted)] hover:text-[color:var(--t-fg)] hover:bg-[color:var(--t-card)]'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-mono-num font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                        <span className="text-[10px] font-mono-num font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-[color:var(--t-accent2)] border border-amber-500/40">
                           BAY 0{bay.bayNumber}
                         </span>
-                        <span className="text-[10px] font-mono-num text-neutral-400">
+                        <span className="text-[10px] font-mono-num text-[color:var(--t-muted)]">
                           {bay.progressPercent}%
                         </span>
                       </div>
-                      <div className="text-xs font-bold text-white truncate">
+                      <div className="text-xs font-bold text-[color:var(--t-fg)] truncate">
                         {bay.vehicleTitle}
                       </div>
-                      <div className="text-[11px] text-neutral-400 truncate mt-0.5">
+                      <div className="text-[11px] text-[color:var(--t-muted)] truncate mt-0.5">
                         {bay.ownerEstate}
                       </div>
                     </button>
@@ -403,13 +456,13 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                 </div>
 
                 {/* Right Column: Editable Bay Details */}
-                <div className="flex-1 p-6 overflow-y-auto bg-[#121622] space-y-5">
-                  <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
+                <div className="flex-1 p-6 overflow-y-auto bg-[color:var(--t-panel)] space-y-5">
+                  <div className="flex items-center justify-between pb-3 border-b border-[color:var(--t-border)]">
                     <div>
-                      <span className="text-xs font-mono-num text-amber-500 uppercase">
+                      <span className="text-xs font-mono-num text-[color:var(--t-accent)] uppercase">
                         Editing Bay 0{selectedBay.bayNumber}
                       </span>
-                      <h4 className="text-lg font-bold text-white font-display">
+                      <h4 className="text-lg font-bold text-[color:var(--t-fg)] font-display">
                         {editTitle || 'Untitled Build'}
                       </h4>
                     </div>
@@ -426,7 +479,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                   {/* Primary Fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
-                      <label className="block text-neutral-400 font-medium mb-1">
+                      <label className="block text-[color:var(--t-muted)] font-medium mb-1">
                         Vehicle Make &amp; Model Title
                       </label>
                       <input
@@ -434,12 +487,12 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
                         placeholder="e.g. 1994 Mahindra MM540 4x4"
-                        className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-neutral-400 font-medium mb-1">
+                      <label className="block text-[color:var(--t-muted)] font-medium mb-1">
                         Owner / Client Estate Location
                       </label>
                       <input
@@ -447,14 +500,14 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                         value={editEstate}
                         onChange={(e) => setEditEstate(e.target.value)}
                         placeholder="e.g. Cauvery River Valley Estate, Balale"
-                        className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
-                      <label className="block text-neutral-400 font-medium mb-1">
+                      <label className="block text-[color:var(--t-muted)] font-medium mb-1">
                         Current Fabrication / Mechanical Phase
                       </label>
                       <input
@@ -462,12 +515,12 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                         value={editPhase}
                         onChange={(e) => setEditPhase(e.target.value)}
                         placeholder="e.g. Chassis Rust Inversion & Shackle Reversal"
-                        className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-neutral-400 font-medium mb-1">
+                      <label className="block text-[color:var(--t-muted)] font-medium mb-1">
                         Target Delivery Timeline
                       </label>
                       <input
@@ -475,16 +528,16 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                         value={editTarget}
                         onChange={(e) => setEditTarget(e.target.value)}
                         placeholder="e.g. End of Month / Next Week"
-                        className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-white focus:outline-none focus:border-amber-500"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500"
                       />
                     </div>
                   </div>
 
                   {/* Progress Percent Slider */}
-                  <div className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-800">
+                  <div className="p-4 rounded-xl bg-[color:var(--t-card)] border border-[color:var(--t-border)]">
                     <div className="flex items-center justify-between text-xs font-mono-num mb-2">
-                      <span className="text-neutral-300 font-medium">Build Progress</span>
-                      <span className="text-amber-400 font-bold text-sm">{editProgress}%</span>
+                      <span className="text-[color:var(--t-fg2)] font-medium">Build Progress</span>
+                      <span className="text-[color:var(--t-accent2)] font-bold text-sm">{editProgress}%</span>
                     </div>
                     <input
                       type="range"
@@ -497,11 +550,11 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                   </div>
 
                   {/* VOICE INPUT FEATURE: Dictate Build Updates with greasy hands */}
-                  <div className="p-4 rounded-xl bg-gradient-to-r from-neutral-900 to-[#161c28] border border-neutral-800">
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-neutral-900 to-[#161c28] border border-[color:var(--t-border)]">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <Mic className={`w-4 h-4 ${isRecording ? 'text-red-500 animate-pulse' : 'text-amber-500'}`} />
-                        <span className="text-xs font-bold text-white">
+                        <Mic className={`w-4 h-4 ${isRecording ? 'text-red-500 animate-pulse' : 'text-[color:var(--t-accent)]'}`} />
+                        <span className="text-xs font-bold text-[color:var(--t-fg)]">
                           Voice Input / Mechanic Audio Log
                         </span>
                       </div>
@@ -520,7 +573,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                       </button>
                     </div>
 
-                    <p className="text-[11px] text-neutral-400 mb-2">
+                    <p className="text-[11px] text-[color:var(--t-muted)] mb-2">
                       Mechanics can speak directly to describe machining, torque settings, or parts installed. It transcribes automatically into project log notes.
                     </p>
 
@@ -533,16 +586,16 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                           ? 'Listening to speech... Speak clearly about this build.'
                           : 'Dictate or type daily build update log note...'
                       }
-                      className="w-full px-3 py-2 text-xs bg-neutral-950 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-amber-500 resize-none"
+                      className="w-full px-3 py-2 text-xs bg-[color:var(--t-page2)] border border-[color:var(--t-borderstrong)] rounded-lg text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 resize-none"
                     />
 
                     {selectedBay.voiceNotes && selectedBay.voiceNotes.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-neutral-800 space-y-1.5">
-                        <span className="text-[10px] font-mono-num uppercase text-neutral-500 block">
+                      <div className="mt-3 pt-3 border-t border-[color:var(--t-border)] space-y-1.5">
+                        <span className="text-[10px] font-mono-num uppercase text-[color:var(--t-dim)] block">
                           Recent Voice Log History
                         </span>
                         {selectedBay.voiceNotes.map((note, idx) => (
-                          <div key={idx} className="text-xs text-neutral-300 bg-neutral-900/80 p-2 rounded border border-neutral-800">
+                          <div key={idx} className="text-xs text-[color:var(--t-fg2)] bg-[color:var(--t-card)] p-2 rounded border border-[color:var(--t-border)]">
                             {note}
                           </div>
                         ))}
@@ -551,8 +604,8 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                   </div>
 
                   {/* ACTIVE WORK ITEMS CHECKLIST */}
-                  <div className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-800">
-                    <span className="text-xs font-bold text-white block mb-2">
+                  <div className="p-4 rounded-xl bg-[color:var(--t-card)] border border-[color:var(--t-border)]">
+                    <span className="text-xs font-bold text-[color:var(--t-fg)] block mb-2">
                       Active Checklist Tasks (Visible on Public Pipeline)
                     </span>
 
@@ -560,13 +613,13 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                       {editChecklist.map((item, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center justify-between gap-2 p-2 rounded bg-neutral-900 border border-neutral-800 text-xs text-neutral-200"
+                          className="flex items-center justify-between gap-2 p-2 rounded bg-[color:var(--t-card)] border border-[color:var(--t-border)] text-xs text-[color:var(--t-fg2)]"
                         >
                           <span className="truncate">{item}</span>
                           <button
                             type="button"
                             onClick={() => handleRemoveChecklist(idx)}
-                            className="text-neutral-500 hover:text-red-400 p-1"
+                            className="text-[color:var(--t-dim)] hover:text-red-400 p-1"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -580,7 +633,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                         value={newChecklistText}
                         onChange={(e) => setNewChecklistText(e.target.value)}
                         placeholder="Add new task (e.g. Torque U-bolts, bleed brake lines)..."
-                        className="flex-1 px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-700 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="flex-1 px-3 py-2 rounded-lg bg-[color:var(--t-page2)] border border-[color:var(--t-borderstrong)] text-xs text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
@@ -591,7 +644,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                       <button
                         type="button"
                         onClick={handleAddChecklist}
-                        className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-xs font-medium"
+                        className="px-3 py-2 bg-[color:var(--t-raised)] hover:bg-[color:var(--t-raisedhover)] text-[color:var(--t-fg)] rounded-lg text-xs font-medium"
                       >
                         Add
                       </button>
@@ -599,15 +652,15 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                   </div>
 
                   {/* PHOTO ATTACHMENTS (Camera / Real Workshop Photos) */}
-                  <div className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-800">
+                  <div className="p-4 rounded-xl bg-[color:var(--t-card)] border border-[color:var(--t-border)]">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-white">
+                      <span className="text-xs font-bold text-[color:var(--t-fg)]">
                         Build Photographs (Attached to Bay)
                       </span>
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-semibold"
+                        className="flex items-center gap-1.5 text-xs text-[color:var(--t-accent2)] hover:text-amber-300 font-semibold"
                       >
                         <Camera className="w-3.5 h-3.5" />
                         <span>Upload Photo from Camera/Device</span>
@@ -624,7 +677,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                     {attachedPhotos.length > 0 ? (
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
                         {attachedPhotos.map((photo, idx) => (
-                          <div key={idx} className="relative aspect-[4/3] rounded-lg overflow-hidden border border-neutral-700 group">
+                          <div key={idx} className="relative aspect-[4/3] rounded-lg overflow-hidden border border-[color:var(--t-borderstrong)] group">
                             <img src={photo} alt="Build attachment" className="w-full h-full object-cover" />
                             <button
                               type="button"
@@ -637,7 +690,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
                         ))}
                       </div>
                     ) : (
-                      <div className="text-[11px] text-neutral-500 text-center py-4 border border-dashed border-neutral-800 rounded-lg">
+                      <div className="text-[11px] text-[color:var(--t-dim)] text-center py-4 border border-dashed border-[color:var(--t-border)] rounded-lg">
                         No photos attached yet. Tap &apos;Upload Photo&apos; to attach live shop photos of this build.
                       </div>
                     )}
@@ -647,14 +700,26 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
             )}
 
             {/* TAB 2: INTERNAL STAFF QUESTIONNAIRE */}
+            {activeTab === 'media' && <StaffMediaManager onSignedOut={handleLogout} />}
+
+            {activeTab === 'configurator' && (
+              <div className="flex-1 overflow-y-auto bg-[color:var(--t-page)]" data-lenis-prevent>
+                <Suspense fallback={<div className="p-10 text-sm text-[color:var(--t-muted)]">Loading the configurator...</div>}>
+                  <ErrorBoundary label="The configurator">
+                    <ConfiguratorStudio />
+                  </ErrorBoundary>
+                </Suspense>
+              </div>
+            )}
+
             {activeTab === 'questionnaire' && (
-              <div className="flex-1 p-6 overflow-y-auto bg-[#121622] space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
+              <div className="flex-1 p-6 overflow-y-auto bg-[color:var(--t-panel)] space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[color:var(--t-border)]">
                   <div>
-                    <h4 className="text-lg font-bold text-white font-display">
+                    <h4 className="text-lg font-bold text-[color:var(--t-fg)] font-display">
                       Internal Master Questionnaire &amp; Actuals Sheet
                     </h4>
-                    <p className="text-xs text-neutral-400 mt-0.5">
+                    <p className="text-xs text-[color:var(--t-muted)] mt-0.5">
                       Hidden from client view. Hand this out to technicians to collect actual turnaround days, machining details, and tools.
                     </p>
                   </div>
@@ -672,31 +737,31 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
 
                 <div className="space-y-6">
                   {WORKSHOP_MASTER_QUESTIONNAIRE.map((section, idx) => (
-                    <div key={section.id} className="p-5 rounded-xl bg-neutral-900/70 border border-neutral-800 space-y-3">
+                    <div key={section.id} className="p-5 rounded-xl bg-[color:var(--t-card)] border border-[color:var(--t-border)] space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono-num uppercase text-amber-500 font-bold">
+                        <span className="text-[10px] font-mono-num uppercase text-[color:var(--t-accent)] font-bold">
                           SECTION {idx + 1} · {section.category}
                         </span>
-                        <span className="text-xs font-semibold text-white">
+                        <span className="text-xs font-semibold text-[color:var(--t-fg)]">
                           {section.topicTitle}
                         </span>
                       </div>
 
-                      <div className="text-xs text-neutral-300 leading-relaxed bg-neutral-950/60 p-3 rounded-lg border border-neutral-800/80">
-                        <strong className="text-neutral-200">What It Is:</strong> {section.whatItIs}
+                      <div className="text-xs text-[color:var(--t-fg2)] leading-relaxed bg-[color:var(--t-page2)] p-3 rounded-lg border border-[color:var(--t-border)]">
+                        <strong className="text-[color:var(--t-fg2)]">What It Is:</strong> {section.whatItIs}
                       </div>
 
                       <div className="text-xs text-amber-300/80 bg-amber-950/20 p-3 rounded-lg border border-amber-800/30">
-                        <strong className="text-amber-400">Previous Guess:</strong> {section.whatWasGuessed}
+                        <strong className="text-[color:var(--t-accent2)]">Previous Guess:</strong> {section.whatWasGuessed}
                       </div>
 
                       <div className="space-y-2 pt-1">
-                        <span className="text-xs font-bold text-neutral-300 block">
+                        <span className="text-xs font-bold text-[color:var(--t-fg2)] block">
                           Questions for Technicians to Answer:
                         </span>
                         {section.questionsForOwner.map((q, qIdx) => (
-                          <div key={qIdx} className="flex items-start gap-2.5 text-xs text-neutral-300">
-                            <span className="text-amber-500 font-mono-num font-bold">{qIdx + 1}.</span>
+                          <div key={qIdx} className="flex items-start gap-2.5 text-xs text-[color:var(--t-fg2)]">
+                            <span className="text-[color:var(--t-accent)] font-mono-num font-bold">{qIdx + 1}.</span>
                             <span>{q}</span>
                           </div>
                         ))}

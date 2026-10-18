@@ -30,7 +30,7 @@ export const WORKSHOP_INFO = {
     state: 'Karnataka',
     pincode: '571216',
     gps: '12.1462° N, 75.9084° E',
-    googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Coorg+Sports+Club+Balale+Road+Ponnampet+Kodagu+Karnataka',
+    googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Coorg+Auto+Works+Matturu+Ponnampet+Kodagu',
   },
   contact: {
     phonePrimary: '+91 94802 78310',
@@ -44,7 +44,7 @@ export const WORKSHOP_INFO = {
     { label: 'Estate 4x4 Heritage', value: '20+ Years' },
     { label: 'Completed Rebuilds', value: '450+' },
     { label: 'Monsoon Cavity Sealing', value: '100% Zinc-Treated' },
-    { label: 'Matturu Depot', value: '4-Bay Facility' },
+    { label: 'Workshop', value: '4-Bay Facility' },
   ],
 };
 
@@ -272,76 +272,20 @@ export const VEHICLE_PLATFORMS: VehiclePlatform[] = [
 
 // Expanded Vintage Modern & Heritage Atelier Paint Collection
 export const PAINT_OPTIONS: PaintOption[] = [
-  {
-    id: 'keswick-olive',
-    name: 'Keswick Estate Olive',
-    hex: '#2e3a2b',
-    finish: 'Satin Estate',
-    inspiration: 'Vintage Modern Heritage Military',
-  },
-  {
-    id: 'heritage-arles-blue',
-    name: 'Heritage Arles Blue',
-    hex: '#476d8c',
-    finish: 'Vintage Pastel',
-    inspiration: '1970s Classic Expedition Blue',
-  },
-  {
-    id: 'coniston-cream',
-    name: 'Coniston Heritage Cream',
-    hex: '#e7dec9',
-    finish: 'Vintage Pastel',
-    inspiration: 'Vintage Ivory / Safari Chalk',
-  },
-  {
-    id: 'aintree-green',
-    name: 'Aintree Forest Metallic',
-    hex: '#1f3526',
-    finish: 'Gloss Metallic',
-    inspiration: 'British Racing & Coffee Canopy Green',
-  },
-  {
-    id: 'kalahari-tan',
-    name: 'Kalahari Coffee Ochre',
-    hex: '#8d683a',
-    finish: 'Desert Textured',
-    inspiration: 'Western Ghats Desert Trail Ochre',
-  },
-  {
-    id: 'obsidian-basalt',
-    name: 'Matturu Obsidian Basalt',
-    hex: '#16191d',
-    finish: 'Matte Military',
-    inspiration: 'Stealth Matte Volcanic Rock',
-  },
-  {
-    id: 'tuscan-crimson',
-    name: 'Tuscan Heritage Madder',
-    hex: '#5c1f24',
-    finish: 'Gloss Metallic',
-    inspiration: 'Deep Earth Crimson',
-  },
-  {
-    id: 'ghats-slate',
-    name: 'Western Ghats Monsoon Slate',
-    hex: '#3d444d',
-    finish: 'Satin Estate',
-    inspiration: 'Battleship Rain Slate',
-  },
-  {
-    id: 'alpine-white',
-    name: 'Brahmagiri Alpine White',
-    hex: '#e4e7ec',
-    finish: 'Gloss Metallic',
-    inspiration: 'Clean Highland Rally White',
-  },
-  {
-    id: 'heritage-bronze',
-    name: 'Kodagu Earth Bronze',
-    hex: '#695138',
-    finish: 'Gloss Metallic',
-    inspiration: 'Metallic Coffee Bean Bronze',
-  },
+  { id: 'keswick-olive', name: 'Keswick Estate Olive', hex: '#2e3a2b', hex2: '#556b4a', finish: 'Gloss Metallic', inspiration: 'Vintage Modern Heritage Military' },
+  { id: 'heritage-arles-blue', name: 'Heritage Arles Blue', hex: '#2f5778', hex2: '#7aa6c8', finish: 'Gloss Metallic', inspiration: '1970s Classic Expedition Blue' },
+  { id: 'coniston-cream', name: 'Coniston Heritage Cream', hex: '#cdbf9f', hex2: '#f3ead6', finish: 'Gloss Metallic', inspiration: 'Vintage Ivory / Safari Chalk' },
+  { id: 'aintree-green', name: 'Aintree Forest Metallic', hex: '#10261a', hex2: '#3f7a56', finish: 'Gloss Metallic', inspiration: 'British Racing & Coffee Canopy Green' },
+  { id: 'kalahari-tan', name: 'Kalahari Coffee Ochre', hex: '#6f4a24', hex2: '#c29a5b', finish: 'Gloss Metallic', inspiration: 'Western Ghats Desert Trail Ochre' },
+  { id: 'obsidian-basalt', name: 'Obsidian Basalt', hex: '#0b0d10', hex2: '#3a4048', finish: 'Gloss Metallic', inspiration: 'Volcanic Rock Black' },
+  { id: 'tuscan-crimson', name: 'Tuscan Heritage Madder', hex: '#4a1219', hex2: '#a23a43', finish: 'Gloss Metallic', inspiration: 'Deep Earth Crimson' },
+  { id: 'ghats-slate', name: 'Western Ghats Monsoon Slate', hex: '#2c333b', hex2: '#6f7c8a', finish: 'Gloss Metallic', inspiration: 'Battleship Rain Slate' },
+  { id: 'alpine-white', name: 'Brahmagiri Alpine White', hex: '#c9ced6', hex2: '#ffffff', finish: 'Gloss Metallic', inspiration: 'Clean Highland Rally White' },
+  { id: 'heritage-bronze', name: 'Kodagu Earth Bronze', hex: '#4e3a24', hex2: '#a77f4f', finish: 'Gloss Metallic', inspiration: 'Metallic Coffee Bean Bronze' },
+  { id: 'cauvery-teal', name: 'Cauvery River Teal', hex: '#0f3b40', hex2: '#3fa3a0', finish: 'Gloss Metallic', inspiration: 'Deep River Teal' },
+  { id: 'dusk-plum', name: 'Dusk Plum Pearl', hex: '#2b1530', hex2: '#8a4f94', finish: 'Gloss Metallic', inspiration: 'Evening Plum Pearl' },
+  { id: 'silver-mist', name: 'Pushpagiri Silver Mist', hex: '#7f8791', hex2: '#e3e7ec', finish: 'Gloss Metallic', inspiration: 'Cool Mountain Silver' },
+  { id: 'sunset-copper', name: 'Sunset Copper Flare', hex: '#7a3a1c', hex2: '#e08a4a', finish: 'Gloss Metallic', inspiration: 'Burnished Copper' },
 ];
 
 // Expanded Canopy & Roof Styles
@@ -351,30 +295,62 @@ export const TOP_OPTIONS: TopOption[] = [
     name: 'Waxed Olive Heavy Canvas with Roll-Up Sides',
     type: 'canvas',
     description: 'Weatherproof military-grade canvas with heavy brass grommets, roll-up rear and side windows for authentic Ghats driving.',
+    colors: [
+      { id: 'olive', name: 'Olive', hex: '#4b5a3a' },
+      { id: 'sand', name: 'Sand', hex: '#b9a778' },
+      { id: 'black', name: 'Black', hex: '#1d1f22' },
+      { id: 'navy', name: 'Navy', hex: '#233a57' },
+      { id: 'maroon', name: 'Maroon', hex: '#5a2227' },
+    ],
   },
   {
     id: 'canvas-sand',
     name: 'Kalahari Sand Heavy Marine Canvas',
     type: 'canvas',
     description: 'UV-resistant sand canvas canopy with roll-down rear rain flap and reinforced stress points.',
+    colors: [
+      { id: 'olive', name: 'Olive', hex: '#4b5a3a' },
+      { id: 'sand', name: 'Sand', hex: '#b9a778' },
+      { id: 'black', name: 'Black', hex: '#1d1f22' },
+      { id: 'navy', name: 'Navy', hex: '#233a57' },
+      { id: 'maroon', name: 'Maroon', hex: '#5a2227' },
+    ],
   },
   {
     id: 'bimini-safari',
     name: 'Safari Bimini Sun Shade (Open Rear)',
     type: 'bimini',
     description: 'Quick-release canopy covering front occupants while leaving the rear open with exposed structural roll cage.',
+    colors: [
+      { id: 'olive', name: 'Olive', hex: '#4b5a3a' },
+      { id: 'sand', name: 'Sand', hex: '#b9a778' },
+      { id: 'black', name: 'Black', hex: '#1d1f22' },
+      { id: 'navy', name: 'Navy', hex: '#233a57' },
+      { id: 'maroon', name: 'Maroon', hex: '#5a2227' },
+    ],
   },
   {
     id: 'insulated-hardtop',
     name: 'Insulated Acoustic Steel Hardtop with Sliding Glass',
     type: 'hardtop',
     description: 'All-weather steel roof with tinted sliding glass, thermal insulation, and roof rack mounting rails.',
+    colors: [
+      { id: 'black', name: 'Matte black', hex: '#15171a', hex2: '#2e3238' },
+      { id: 'white', name: 'Gloss white', hex: '#cfd4db', hex2: '#ffffff' },
+      { id: 'olive', name: 'Olive metallic', hex: '#2e3a2b', hex2: '#556b4a' },
+      { id: 'silver', name: 'Silver metallic', hex: '#7f8791', hex2: '#e3e7ec' },
+    ],
   },
   {
     id: 'expedition-rack-tent',
     name: 'Steel Exoskeleton Rack + Clamshell Roof Tent',
     type: 'expedition',
     description: 'Powder-coated steel exoskeleton basket integrated with high-density aluminium clamshell rooftop tent.',
+    colors: [
+      { id: 'black', name: 'Black powder coat', hex: '#16181b', hex2: '#3a3f46' },
+      { id: 'olive', name: 'Olive powder coat', hex: '#3b4630', hex2: '#6a7a54' },
+      { id: 'sand', name: 'Desert sand powder coat', hex: '#a8946a', hex2: '#d9c8a0' },
+    ],
   },
   {
     id: 'open-trail-tub',
@@ -683,7 +659,7 @@ export const WORKSHOP_MASTER_QUESTIONNAIRE: QuestionnaireSection[] = [
     whatWasGuessed:
       'Turnaround was estimated at 12 to 18 days. Engine variants assumed were Peugeot XD3P 2.5L, Mahindra Di Turbo 2.6L (MDI3200TC), Tata 2.0L TCIC, 2.2L Dicor, and Maruti G13BB MPFI. Price was removed as all pricing is in situ.',
     questionsForOwner: [
-      'How many calendar days does a typical complete engine overhaul take at the Matturu workshop?',
+      'How many calendar days does a typical complete engine overhaul take at the workshop?',
       'Which machining steps are handled directly in-house (e.g. valve lapping, honing) vs sent to specialized lathe shops in Mysore or Virajpet?',
       'Which specific engines are most frequently overhauled in Coorg (e.g. Di Turbo, Peugeot XD3P, Thar CRDe, Gypsy 1.3, Bolero m2DiCR, Commander MDI)?',
       'What is your warranty period on a rebuilt engine (e.g. 6 months, 10,000 km, or harvest season guarantee)?',
@@ -714,7 +690,7 @@ export const WORKSHOP_MASTER_QUESTIONNAIRE: QuestionnaireSection[] = [
     whatWasGuessed:
       'Turnaround was estimated at 7 to 12 days. Tube specifications assumed were 42mm/48mm seamless DOM steel tubing with 5mm plate steel for winch mounts.',
     questionsForOwner: [
-      'What metalworking tools are available at the Matturu shop (hydraulic tube bender, MIG welder, sheet metal brake, lathe)?',
+      'What metalworking tools are available at the shop (hydraulic tube bender, MIG welder, sheet metal brake, lathe)?',
       'What gauge of steel plate and diameter/thickness of tube do you typically use for custom MM540 / Commander bumpers and sliders?',
       'How long does a bespoke front winch bumper with shackle recovery points take to fabricate from scratch?',
       'Can clients bring their own sketches/dimensions, or do you have standard proven templates for MM540s, Commanders, and Gypsies?',
@@ -729,7 +705,7 @@ export const WORKSHOP_MASTER_QUESTIONNAIRE: QuestionnaireSection[] = [
     whatWasGuessed:
       'Turnaround was estimated at 3 to 5 days. Lift height options assumed were stock, +2.0" parabolic lift, and +3.5" heavy payload packs.',
     questionsForOwner: [
-      'Do you actively fabricate and install front shackle reversal kits for MM540s and Gypsies at Matturu?',
+      'Do you actively fabricate and install front shackle reversal kits for MM540s and Gypsies at the workshop?',
       'How many days does a complete shackle reversal + leaf re-cambering take?',
       'Do you re-arch existing leaf springs or source new composite/parabolic leaf packs?',
       'What shock absorber brands do you recommend and install (ToughDog, Old Man Emu, Gabriel, Ironman, Monroe)?',
@@ -759,7 +735,7 @@ export const WORKSHOP_MASTER_QUESTIONNAIRE: QuestionnaireSection[] = [
     whatWasGuessed:
       'Turnaround was estimated as "Emergency Dispatch". Operating hours listed as 24/7 emergency response across Ponnampet, Kutta, Gonikoppal, Virajpet.',
     questionsForOwner: [
-      'What is the exact service radius for field recovery from Matturu (e.g. 25 km, South Kodagu only, or entire Kodagu)?',
+      'What is the exact service radius for field recovery from the workshop (e.g. 25 km, South Kodagu only, or entire Kodagu)?',
       'What recovery equipment is carried on your rescue vehicle (winch capacity, onboard welding, high-lift jacks, air compressor)?',
       'Are field calls available 24/7 or only during daylight hours?',
       'Is flatbed towing available for severely disabled vehicles?',
@@ -789,7 +765,7 @@ export const WORKSHOP_MASTER_QUESTIONNAIRE: QuestionnaireSection[] = [
     whatWasGuessed:
       'Previous prototype showed estimated rupee amounts. The owner has clarified: all pricing is strictly in situ, determined by physical inspection, and discussed on-call with the client.',
     questionsForOwner: [
-      'What is your standard consultation process (customer brings vehicle to Matturu vs technician visits estate for inspection)?',
+      'What is your standard consultation process (customer brings vehicle to the workshop vs technician visits estate for inspection)?',
       'What is your deposit policy for custom projects (e.g. 50% advance for donor parts/fabrication, balance on road test)?',
       'Is pricing completely on-call and tailored to each client?',
       'What is the best phone number and primary WhatsApp number for new client inquiries?',

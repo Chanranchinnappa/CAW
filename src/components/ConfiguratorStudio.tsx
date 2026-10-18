@@ -23,52 +23,39 @@ import {
   getAdvisories,
   getPlatform,
   parseConfig,
+  resolveTopColor,
   serializeConfig,
 } from '../data/configuratorRules';
 import { VehicleBlueprintVisualizer } from './VehicleBlueprintVisualizer';
+import { AnimatePresence, motion } from 'motion/react';
+import { EASE, MaskText } from '../motion/primitives';
 import {
   Check,
-  Send,
-  RotateCcw,
-  Compass,
+  ChevronDown,
   FileText,
   Info,
   Link2,
-  Sun,
-  Moon,
-  ChevronLeft,
-  ChevronRight,
+  RotateCcw,
+  Send,
   TriangleAlert,
-  ArrowUpFromLine,
 } from 'lucide-react';
 
 interface ConfiguratorStudioProps {
   onBookService?: (platformName: string) => void;
 }
 
-type CategoryId = 'paint' | 'top' | 'suspension' | 'wheels' | 'armor' | 'interior';
+type StepId = 'paint' | 'top' | 'suspension' | 'wheels' | 'armor' | 'interior';
 
-const CATEGORIES: { id: CategoryId; num: string; label: string }[] = [
-  { id: 'paint', num: '01', label: 'Paint Finish' },
-  { id: 'top', num: '02', label: 'Canopy & Roof' },
-  { id: 'suspension', num: '03', label: 'Suspension' },
-  { id: 'wheels', num: '04', label: 'Wheels & Tyres' },
-  { id: 'armor', num: '05', label: 'Field Armor' },
-  { id: 'interior', num: '06', label: 'Interior' },
+const STEPS: { id: StepId; label: string }[] = [
+  { id: 'paint', label: 'Paint' },
+  { id: 'top', label: 'Roof and canopy' },
+  { id: 'suspension', label: 'Suspension' },
+  { id: 'wheels', label: 'Wheels and tyres' },
+  { id: 'armor', label: 'Armor and accessories' },
+  { id: 'interior', label: 'Interior' },
 ];
 
 const STORAGE_KEY = 'caw_configurator_build';
-const THEME_KEY = 'caw_configurator_theme';
-type CfgTheme = 'dark' | 'light';
-const loadTheme = (): CfgTheme => {
-  try {
-    const t = localStorage.getItem(THEME_KEY);
-    if (t === 'light' || t === 'dark') return t;
-  } catch {
-    // ignore
-  }
-  return 'dark';
-};
 
 /** Initial build priority: shared link, then last session, then the first platform's default. */
 const loadInitialConfig = (): { config: ConfiguratorState; fromLink: boolean } => {
@@ -109,40 +96,143 @@ const copyText = async (text: string): Promise<boolean> => {
   }
 };
 
-/* Shared option-card styling */
-const cardClass = (selected: boolean) =>
-  `w-full flex items-start justify-between gap-3 p-3.5 rounded-lg border text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/70 ${
-    selected
-      ? 'border-amber-500 bg-[color:var(--cfg-cardsel)] text-[color:var(--cfg-fg)]'
-      : 'border-[color:var(--cfg-border)] bg-[color:var(--cfg-card)] text-[color:var(--cfg-fg2)] hover:border-[color:var(--cfg-borderstrong)]'
-  }`;
+/** Light or dark check mark depending on swatch luminance */
+/** CSS background for a paint swatch: a metallic gradient with a soft highlight. */
+const paintBackground = (hex: string, hex2?: string) =>
+  `radial-gradient(120% 90% at 28% 18%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 42%), linear-gradient(135deg, ${hex2 ?? hex} 0%, ${hex} 55%, rgba(0,0,0,0.55) 130%), ${hex}`;
+
+const checkColor = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  return lum > 0.6 ? '#14181c' : '#ffffff';
+};
+
+const focusRing =
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--t-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--t-panel)]';
+
+/* A single choice row: a left bar marks the selection */
+const ChoiceRow: React.FC<{
+  selected: boolean;
+  role: 'radio' | 'checkbox';
+  onClick: () => void;
+  title: string;
+  meta?: string;
+  badge?: string;
+  description: string;
+}> = ({ selected, role, onClick, title, meta, badge, description }) => (
+  <button
+    role={role}
+    aria-checked={selected}
+    onClick={onClick}
+    className={`group relative w-full flex items-start gap-3 py-3 pl-4 pr-3 rounded-md text-left transition-colors ${focusRing} ${
+      selected
+        ? 'bg-[color:var(--t-cardsel)]'
+        : 'hover:bg-[color:var(--t-card)]'
+    }`}
+  >
+    <span
+      aria-hidden
+      className={`absolute left-0 top-2 bottom-2 w-[3px] rounded-full transition-colors ${
+        selected ? 'bg-[color:var(--t-accent)]' : 'bg-transparent group-hover:bg-[color:var(--t-borderstrong)]'
+      }`}
+    />
+    {role === 'checkbox' && (
+      <span
+        aria-hidden
+        className={`mt-0.5 w-4 h-4 rounded-[4px] border flex items-center justify-center shrink-0 ${
+          selected
+            ? 'bg-[color:var(--t-accent)] border-[color:var(--t-accent)] text-black'
+            : 'border-[color:var(--t-borderstrong)]'
+        }`}
+      >
+        {selected && <Check className="w-3 h-3 stroke-[3]" />}
+      </span>
+    )}
+    <span className="min-w-0 flex-1">
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="text-sm font-semibold text-[color:var(--t-fg)]">{title}</span>
+        {badge && (
+          <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-[color:var(--t-goodbg)] text-[color:var(--t-good)] border border-[color:var(--t-goodborder)]">
+            {badge}
+          </span>
+        )}
+      </span>
+      {meta && <span className="block text-xs font-mono-num text-[color:var(--t-accent2)] mt-0.5">{meta}</span>}
+      <span className="block text-[13px] leading-relaxed text-[color:var(--t-muted)] mt-1">{description}</span>
+    </span>
+    {role === 'radio' && selected && (
+      <Check className="w-4 h-4 mt-0.5 text-[color:var(--t-accent)] shrink-0" aria-hidden />
+    )}
+  </button>
+);
+
+/* Build-sheet row with a dotted leader between label and value */
+const SheetRow: React.FC<{ label: string; value: string; changed?: boolean }> = ({ label, value, changed }) => (
+  <div className="flex items-baseline gap-2 text-sm">
+    <dt className="text-[color:var(--t-muted)] shrink-0">{label}</dt>
+    <span aria-hidden className="flex-1 min-w-4 border-b border-dotted border-[color:var(--t-borderstrong)] translate-y-[-3px]" />
+    <dd className="text-right font-medium text-[color:var(--t-fg)] max-w-[62%]">
+      {changed && (
+        <span
+          className="inline-block w-1.5 h-1.5 mr-1.5 rounded-full bg-[color:var(--t-accent)] align-middle"
+          title="Changed from the default build"
+        />
+      )}
+      {value}
+    </dd>
+  </div>
+);
+
+const MAKES = Array.from(new Set(VEHICLE_PLATFORMS.map((p) => p.lineup)));
 
 export const ConfiguratorStudio: React.FC<ConfiguratorStudioProps> = ({ onBookService }) => {
   const initial = useRef(loadInitialConfig()).current;
   const [config, setConfig] = useState<ConfiguratorState>(initial.config);
-  const [theme, setTheme] = useState<CfgTheme>(loadTheme);
-  const [activeCategory, setActiveCategory] = useState<CategoryId>('paint');
+  const [openStep, setOpenStep] = useState<StepId | null>('paint');
+  const [hoverPaintId, setHoverPaintId] = useState<string | null>(null);
   const [copied, setCopied] = useState<'spec' | 'link' | 'failed' | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
-  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const stepRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  const [make, setMake] = useState<string>(getPlatform(config.platformId).lineup);
   const currentPlatform = getPlatform(config.platformId);
   const baseline = currentPlatform.defaultOptions;
   const isModified = !configsEqual(config, baseline);
   const changeCount = countChanges(config, baseline);
 
-  // Option lookups
   const selectedPaint = PAINT_OPTIONS.find((p) => p.id === config.paintId) || PAINT_OPTIONS[0];
   const selectedTop = TOP_OPTIONS.find((t) => t.id === config.topId) || TOP_OPTIONS[0];
+  const selectedTopColor = resolveTopColor(selectedTop.id, config.topColorId);
   const selectedSuspension =
     SUSPENSION_OPTIONS.find((s) => s.id === config.suspensionId) || SUSPENSION_OPTIONS[0];
   const selectedWheel = WHEEL_OPTIONS.find((w) => w.id === config.wheelId) || WHEEL_OPTIONS[0];
   const selectedInterior =
     INTERIOR_OPTIONS.find((i) => i.id === config.interiorId) || INTERIOR_OPTIONS[0];
   const selectedArmor = ARMOR_OPTIONS.filter((a) => config.selectedArmorIds.includes(a.id));
+  const shownPaint = PAINT_OPTIONS.find((p) => p.id === hoverPaintId) || selectedPaint;
 
   const advisories = useMemo(() => getAdvisories(config), [config]);
   const clearanceMm = estimateClearanceMm(currentPlatform, selectedSuspension.liftInches);
+
+  const changedStep: Record<StepId, boolean> = {
+    paint: config.paintId !== baseline.paintId,
+    top: config.topId !== baseline.topId,
+    suspension: config.suspensionId !== baseline.suspensionId,
+    wheels: config.wheelId !== baseline.wheelId,
+    armor: [...config.selectedArmorIds].sort().join() !== [...baseline.selectedArmorIds].sort().join(),
+    interior: config.interiorId !== baseline.interiorId,
+  };
+
+  const stepValue = (id: StepId): string => {
+    switch (id) {
+      case 'paint': return selectedPaint.name;
+      case 'top': return selectedTopColor ? `${selectedTopColor.name} · ${selectedTop.name}` : selectedTop.name;
+      case 'suspension': return selectedSuspension.liftInches ? `+${selectedSuspension.liftInches}" lift` : 'Stock height';
+      case 'wheels': return selectedWheel.tyreSpec;
+      case 'armor': return selectedArmor.length ? `${selectedArmor.length} of ${ARMOR_OPTIONS.length} fitted` : 'None';
+      case 'interior': return selectedInterior.name;
+    }
+  };
 
   // Scroll to the studio when opened from a shared link
   useEffect(() => {
@@ -172,15 +262,6 @@ export const ConfiguratorStudio: React.FC<ConfiguratorStudioProps> = ({ onBookSe
     }
   }, [config, isModified]);
 
-  const chooseTheme = (t: CfgTheme) => {
-    setTheme(t);
-    try {
-      localStorage.setItem(THEME_KEY, t);
-    } catch {
-      // ignore
-    }
-  };
-
   const flash = (kind: 'spec' | 'link' | 'failed') => {
     setCopied(kind);
     setTimeout(() => setCopied(null), 2500);
@@ -200,36 +281,17 @@ export const ConfiguratorStudio: React.FC<ConfiguratorStudioProps> = ({ onBookSe
     }));
   };
 
-  const handleReset = () => setConfig(baseline);
+  const toggleStep = (id: StepId) => setOpenStep((cur) => (cur === id ? null : id));
 
-  // Tab keyboard navigation (arrow keys / Home / End)
-  const focusCategory = (idx: number) => {
-    const next = CATEGORIES[(idx + CATEGORIES.length) % CATEGORIES.length];
-    setActiveCategory(next.id);
-    tabRefs.current[next.id]?.focus();
-  };
-  const handleTabKey = (e: React.KeyboardEvent, idx: number) => {
-    if (e.key === 'ArrowRight') { e.preventDefault(); focusCategory(idx + 1); }
-    else if (e.key === 'ArrowLeft') { e.preventDefault(); focusCategory(idx - 1); }
-    else if (e.key === 'Home') { e.preventDefault(); focusCategory(0); }
-    else if (e.key === 'End') { e.preventDefault(); focusCategory(CATEGORIES.length - 1); }
-  };
-
-  const activeIdx = CATEGORIES.findIndex((c) => c.id === activeCategory);
-  const goStep = (delta: number) => {
-    const next = CATEGORIES[activeIdx + delta];
-    if (next) setActiveCategory(next.id);
-  };
-
-  const currentSelectionLabel = (id: CategoryId): string => {
-    switch (id) {
-      case 'paint': return selectedPaint.name;
-      case 'top': return selectedTop.name;
-      case 'suspension': return selectedSuspension.liftInches ? `+${selectedSuspension.liftInches}" lift` : 'Stock height';
-      case 'wheels': return selectedWheel.tyreSpec;
-      case 'armor': return `${config.selectedArmorIds.length} of ${ARMOR_OPTIONS.length}`;
-      case 'interior': return selectedInterior.name;
-    }
+  const goNext = (id: StepId) => {
+    const idx = STEPS.findIndex((s) => s.id === id);
+    const next = STEPS[idx + 1];
+    if (!next) return;
+    setOpenStep(next.id);
+    setTimeout(
+      () => stepRefs.current[next.id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }),
+      60
+    );
   };
 
   const shareUrl = () => {
@@ -242,7 +304,7 @@ export const ConfiguratorStudio: React.FC<ConfiguratorStudioProps> = ({ onBookSe
   const specLines = () => [
     `Platform: ${currentPlatform.name}`,
     `Finish: ${selectedPaint.name} (${selectedPaint.finish})`,
-    `Top / Canopy: ${selectedTop.name}`,
+    `Top / Canopy: ${selectedTop.name}${selectedTopColor ? ` (${selectedTopColor.name})` : ''}`,
     `Suspension: ${selectedSuspension.name}`,
     `Wheels & Tyres: ${selectedWheel.name}`,
     `Off-Road Armor: ${selectedArmor.map((a) => a.name).join('; ') || 'None'}`,
@@ -251,7 +313,7 @@ export const ConfiguratorStudio: React.FC<ConfiguratorStudioProps> = ({ onBookSe
 
   const whatsappHref = () => {
     const text = [
-      'Hello Coorg Auto Works (Matturu)!',
+      'Hello Coorg Auto Works!',
       '',
       'I configured a custom build on your CAW Studio:',
       ...specLines().map((l) => `*${l.replace(': ', ':*  ')}`),
@@ -278,501 +340,455 @@ export const ConfiguratorStudio: React.FC<ConfiguratorStudioProps> = ({ onBookSe
     flash((await copyText(shareUrl())) ? 'link' : 'failed');
   };
 
-  const SummaryRow: React.FC<{ label: string; value: string; changed?: boolean }> = ({ label, value, changed }) => (
-    <div className="flex justify-between gap-4">
-      <span className="text-[color:var(--cfg-muted)] shrink-0">{label}</span>
-      <span className="text-[color:var(--cfg-fg)] text-right">
-        {changed && <span className="inline-block w-1.5 h-1.5 mr-1.5 rounded-full bg-amber-500 align-middle" title="Changed from the default build" />}
-        {value}
-      </span>
-    </div>
-  );
+  /* ---------- Step bodies ---------- */
+  const renderStep = (id: StepId) => {
+    switch (id) {
+      case 'paint':
+        return (
+          <div>
+            <div role="radiogroup" aria-label="Paint colour" className="grid grid-cols-5 sm:grid-cols-5 gap-3 px-1 pt-1">
+              {PAINT_OPTIONS.map((paint) => {
+                const sel = config.paintId === paint.id;
+                return (
+                  <button
+                    key={paint.id}
+                    role="radio"
+                    aria-checked={sel}
+                    aria-label={`${paint.name}, ${paint.finish}`}
+                    onClick={() => setConfig({ ...config, paintId: paint.id })}
+                    onMouseEnter={() => setHoverPaintId(paint.id)}
+                    onMouseLeave={() => setHoverPaintId(null)}
+                    onFocus={() => setHoverPaintId(paint.id)}
+                    onBlur={() => setHoverPaintId(null)}
+                    className={`relative aspect-square rounded-full border border-[color:var(--t-borderstrong)] transition-transform hover:scale-105 ${focusRing} ${
+                      sel ? 'ring-2 ring-offset-2 ring-[color:var(--t-accent)] ring-offset-[color:var(--t-panel)]' : ''
+                    }`}
+                    style={{ background: paintBackground(paint.hex, paint.hex2) }}
+                  >
+                    {sel && (
+                      <Check
+                        className="absolute inset-0 m-auto w-4 h-4 stroke-[3]"
+                        style={{ color: checkColor(paint.hex) }}
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-4 px-1 min-h-[3.25rem]" aria-live="polite">
+              <div className="text-sm font-semibold text-[color:var(--t-fg)]">{shownPaint.name}</div>
+              <div className="text-[13px] text-[color:var(--t-muted)]">
+                {shownPaint.finish}
+                {shownPaint.inspiration ? `, ${shownPaint.inspiration.toLowerCase()}` : ''}
+              </div>
+              <div className="text-xs text-[color:var(--t-dim)] mt-1">
+                2K polyurethane, built to hold up through Kodagu monsoon humidity.
+              </div>
+            </div>
+          </div>
+        );
+      case 'top':
+        return (
+          <div role="radiogroup" aria-label="Roof and canopy" className="space-y-1">
+            {TOP_OPTIONS.map((t) => (
+              <ChoiceRow key={t.id} role="radio" selected={config.topId === t.id}
+                onClick={() => setConfig({ ...config, topId: t.id, topColorId: undefined })} title={t.name} description={t.description} />
+            ))}
+            {selectedTopColor && (
+              <div className="px-1 pt-4">
+                <div className="text-sm font-semibold text-[color:var(--t-fg)]">
+                  Colour <span className="font-normal text-[color:var(--t-muted)]">· {selectedTopColor.name}</span>
+                </div>
+                <div role="radiogroup" aria-label="Roof colour" className="mt-3 flex flex-wrap gap-3">
+                  {(selectedTop.colors ?? []).map((c) => {
+                    const sel = c.id === selectedTopColor.id;
+                    return (
+                      <button
+                        key={c.id}
+                        role="radio"
+                        aria-checked={sel}
+                        aria-label={c.name}
+                        title={c.name}
+                        onClick={() => setConfig({ ...config, topColorId: c.id })}
+                        className={`relative h-10 w-10 rounded-full border border-[color:var(--t-borderstrong)] transition-transform hover:scale-105 ${focusRing} ${
+                          sel ? 'ring-2 ring-offset-2 ring-[color:var(--t-accent)] ring-offset-[color:var(--t-panel)]' : ''
+                        }`}
+                        style={{ background: paintBackground(c.hex, c.hex2) }}
+                      >
+                        {sel && <Check className="absolute inset-0 m-auto h-4 w-4 stroke-[3]" style={{ color: checkColor(c.hex) }} aria-hidden />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case 'suspension':
+        return (
+          <div role="radiogroup" aria-label="Suspension" className="space-y-1">
+            {SUSPENSION_OPTIONS.map((s) => (
+              <ChoiceRow key={s.id} role="radio" selected={config.suspensionId === s.id}
+                onClick={() => setConfig({ ...config, suspensionId: s.id })} title={s.name}
+                badge={s.liftInches > 0 ? `+${s.liftInches}" lift` : undefined} description={s.description} />
+            ))}
+          </div>
+        );
+      case 'wheels':
+        return (
+          <div role="radiogroup" aria-label="Wheels and tyres" className="space-y-1">
+            {WHEEL_OPTIONS.map((w) => (
+              <ChoiceRow key={w.id} role="radio" selected={config.wheelId === w.id}
+                onClick={() => setConfig({ ...config, wheelId: w.id })} title={w.name} meta={w.rimSpec} description={w.description} />
+            ))}
+          </div>
+        );
+      case 'armor':
+        return (
+          <div>
+            <div className="flex items-center justify-between px-1 pb-2 text-xs text-[color:var(--t-muted)]">
+              <span>Fabricated in our own metal shop. Choose any combination.</span>
+              <span className="flex gap-3 shrink-0 ml-3">
+                <button className={`underline underline-offset-2 hover:text-[color:var(--t-fg)] rounded ${focusRing}`}
+                  onClick={() => setConfig({ ...config, selectedArmorIds: ARMOR_OPTIONS.map((a) => a.id) })}>All</button>
+                <button className={`underline underline-offset-2 hover:text-[color:var(--t-fg)] rounded ${focusRing}`}
+                  onClick={() => setConfig({ ...config, selectedArmorIds: [] })}>None</button>
+              </span>
+            </div>
+            <div role="group" aria-label="Armor and accessories" className="space-y-1">
+              {ARMOR_OPTIONS.map((a) => (
+                <ChoiceRow key={a.id} role="checkbox" selected={config.selectedArmorIds.includes(a.id)}
+                  onClick={() => toggleArmor(a.id)} title={a.name} description={a.description} />
+              ))}
+            </div>
+          </div>
+        );
+      case 'interior':
+        return (
+          <div role="radiogroup" aria-label="Interior" className="space-y-1">
+            {INTERIOR_OPTIONS.map((i) => (
+              <ChoiceRow key={i.id} role="radio" selected={config.interiorId === i.id}
+                onClick={() => setConfig({ ...config, interiorId: i.id })} title={i.name} meta={i.material} description={i.description} />
+            ))}
+          </div>
+        );
+    }
+  };
+
+  const specs: [string, string][] = [
+    ['Engine', currentPlatform.stockSpecs.engine],
+    ['Displacement', currentPlatform.stockSpecs.displacement],
+    ['Peak torque', currentPlatform.stockSpecs.torque],
+    ['Axle', currentPlatform.stockSpecs.axle],
+    ['Drive', currentPlatform.driveType],
+  ];
 
   return (
     <section
       id="configurator-studio"
       ref={sectionRef}
-      data-cfg-theme={theme}
-      className="cfg-root relative py-20 bg-[color:var(--cfg-bg)] border-t border-b border-[color:var(--cfg-border)] scroll-mt-16"
+      className="relative py-16 lg:py-24 bg-[color:var(--t-bg)] border-y border-[color:var(--t-border)] scroll-mt-16"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+        {/* Title */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-mono-num text-[color:var(--cfg-accent)] mb-2">
-              <Compass className="w-4 h-4" />
-              <span>CAW BESPOKE STUDIO · INDIAN 4X4 LINEUP</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[color:var(--cfg-fg)] font-display">
-              Bespoke Vehicle Studio &amp; Spec Customizer
+          <div className="max-w-2xl">
+            <h2 className="font-display font-extrabold tracking-tight text-[color:var(--t-fg)] text-4xl sm:text-5xl lg:text-6xl leading-[1.02]">
+              <MaskText text="Build your 4x4" />
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-[color:var(--cfg-muted)] max-w-2xl">
-              Inspired by classic automotive ateliers, tailored for the rugged mountain trails of Coorg. Select your platform, paint luster, suspension lift, and recovery armor.
+            <p className="mt-4 text-base text-[color:var(--t-muted)] leading-relaxed">
+              Start from a base vehicle, then choose paint, roof, suspension, tyres, armor and trim. Send the finished sheet to the workshop and they will quote after inspecting your vehicle.
             </p>
           </div>
+          <button
+            onClick={() => setConfig(baseline)}
+            disabled={!isModified}
+            className={`self-start md:self-auto flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg border border-[color:var(--t-borderstrong)] text-[color:var(--t-fg2)] hover:bg-[color:var(--t-raised)] transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent ${focusRing}`}
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset to default build
+          </button>
+        </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <div
-              role="radiogroup"
-              aria-label="Studio theme"
-              className="flex items-center p-1 rounded-lg border border-[color:var(--cfg-border)] bg-[color:var(--cfg-card)]"
-            >
-              {([['dark', 'Dark', Moon], ['light', 'Light', Sun]] as const).map(([id, label, Icon]) => (
+        {/* Make, then model */}
+        <div className="mb-8">
+          <div role="radiogroup" aria-label="Make" className="flex flex-wrap gap-2">
+            {MAKES.map((m) => {
+              const sel = m === make;
+              return (
                 <button
-                  key={id}
+                  key={m}
                   role="radio"
-                  aria-checked={theme === id}
-                  onClick={() => chooseTheme(id)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/70 ${
-                    theme === id ? 'bg-amber-500 text-black font-semibold' : 'text-[color:var(--cfg-muted)] hover:text-[color:var(--cfg-fg)]'
+                  aria-checked={sel}
+                  onClick={() => {
+                    setMake(m);
+                    const cur = getPlatform(config.platformId);
+                    if (cur.lineup !== m) {
+                      const first = VEHICLE_PLATFORMS.find((p) => p.lineup === m);
+                      if (first) handleSelectPlatform(first.id);
+                    }
+                  }}
+                  className={`rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors ${focusRing} ${
+                    sel
+                      ? 'border-[color:var(--t-accent)] bg-[color:var(--t-accent)] text-black'
+                      : 'border-[color:var(--t-borderstrong)] text-[color:var(--t-fg2)] hover:bg-[color:var(--t-raised)]'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{label}</span>
+                  {m}
                 </button>
-              ))}
-            </div>
-            <button
-              onClick={handleReset}
-              disabled={!isModified}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[color:var(--cfg-borderstrong)] bg-[color:var(--cfg-card)] text-[color:var(--cfg-muted)] hover:text-[color:var(--cfg-fg)] transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-[color:var(--cfg-muted)]"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset to {currentPlatform.name.split(' ').slice(0, 2).join(' ')} default</span>
-            </button>
+              );
+            })}
           </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={make}
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: EASE }}
+              role="radiogroup"
+              aria-label={`${make} models`}
+              className="mt-4 flex gap-3 overflow-x-auto pb-2 snap-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {VEHICLE_PLATFORMS.filter((p) => p.lineup === make).map((plat, i) => {
+                const sel = plat.id === config.platformId;
+                return (
+                  <motion.button
+                    key={plat.id}
+                    role="radio"
+                    aria-checked={sel}
+                    initial={{ opacity: 0, x: 40 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, ease: EASE, delay: i * 0.06 }}
+                    onClick={() => handleSelectPlatform(plat.id)}
+                    className={`snap-start shrink-0 w-56 text-left rounded-xl border px-5 py-4 transition-colors ${focusRing} ${
+                      sel
+                        ? 'border-[color:var(--t-accent)] bg-[color:var(--t-panel)] shadow-sm'
+                        : 'border-[color:var(--t-border)] hover:border-[color:var(--t-borderstrong)] hover:bg-[color:var(--t-panel2)]'
+                    }`}
+                  >
+                    <span className="block text-base font-semibold text-[color:var(--t-fg)] leading-snug">
+                      {plat.name.replace(plat.lineup, '').replace(/\s*\(.*?\)\s*/g, ' ').trim()}
+                    </span>
+                    <span className="mt-1 block text-xs leading-snug text-[color:var(--t-muted)]">{plat.tagline}</span>
+                  </motion.button>
+                );
+              })}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        {/* Platform Selection */}
-        <div
-          role="radiogroup"
-          aria-label="Base vehicle platform"
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 p-1.5 bg-[color:var(--cfg-panel2)] rounded-xl border border-[color:var(--cfg-border)] mb-8"
-        >
-          {VEHICLE_PLATFORMS.map((plat) => {
-            const isSelected = plat.id === config.platformId;
-            return (
-              <button
-                key={plat.id}
-                role="radio"
-                aria-checked={isSelected}
-                onClick={() => handleSelectPlatform(plat.id)}
-                className={`flex flex-col text-left p-3 rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/70 ${
-                  isSelected
-                    ? 'bg-[color:var(--cfg-raised)] text-[color:var(--cfg-fg)] shadow-md border border-[color:var(--cfg-borderstrong)]'
-                    : 'text-[color:var(--cfg-muted)] hover:text-[color:var(--cfg-fg)] hover:bg-[color:var(--cfg-card)] border border-transparent'
-                }`}
-              >
-                <span className="text-[10px] font-mono-num uppercase tracking-wider text-[color:var(--cfg-accent)]">
-                  {plat.lineup}
-                </span>
-                <span className="font-semibold text-xs sm:text-sm mt-0.5 truncate text-[color:var(--cfg-fg)]">
-                  {plat.name}
-                </span>
-                <span className="text-[11px] text-[color:var(--cfg-muted)] mt-1 line-clamp-1">{plat.tagline}</span>
-              </button>
-            );
-          })}
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-8 xl:gap-12 items-start">
+          {/* Stage + specs: stays in view while you work through the steps */}
+          <div className="flex flex-col gap-5 min-w-0 lg:sticky lg:top-24">
+            <VehicleBlueprintVisualizer config={config} />
 
-        {/* Main Split Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left: Visualizer & Specs */}
-          <div className="lg:col-span-7 flex flex-col gap-6 min-w-0">
-            <VehicleBlueprintVisualizer config={config} className="shadow-2xl" />
-
-            <div className="p-5 bg-[color:var(--cfg-panel)] rounded-xl border border-[color:var(--cfg-border)]">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-[color:var(--cfg-border)]">
-                <span className="text-xs font-mono-num uppercase tracking-wider text-[color:var(--cfg-muted)]">
-                  Donor Platform Architecture
-                </span>
-                <span className="text-xs text-[color:var(--cfg-accent)] font-medium font-mono-num">ESTATE TESTED</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs font-mono-num">
-                {[
-                  ['Factory Engine', currentPlatform.stockSpecs.engine],
-                  ['Displacement', currentPlatform.stockSpecs.displacement],
-                  ['Peak Torque', currentPlatform.stockSpecs.torque],
-                  ['Differential & Axle', currentPlatform.stockSpecs.axle],
-                  ['Drive System', currentPlatform.driveType],
-                ].map(([label, value]) => (
-                  <div key={label} className="min-w-0">
-                    <span className="text-[color:var(--cfg-dim)] block">{label}</span>
-                    <span className="text-[color:var(--cfg-fg2)] font-medium mt-0.5 block" title={value}>{value}</span>
+            <div className="rounded-xl border border-[color:var(--t-border)] bg-[color:var(--t-panel)] px-5 py-4">
+              <h3 className="font-display font-bold text-lg text-[color:var(--t-fg)] [font-stretch:85%]">
+                {currentPlatform.name}
+              </h3>
+              <p className="text-[13px] text-[color:var(--t-muted)] mt-1 leading-relaxed max-w-prose">
+                {currentPlatform.tagline}. Factory figures below; we confirm them against your RC and build card.
+              </p>
+              <dl className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 text-sm">
+                {specs.map(([k, v]) => (
+                  <div key={k} className="min-w-0">
+                    <dt className="text-xs text-[color:var(--t-dim)]">{k}</dt>
+                    <dd className="mt-0.5 font-mono-num text-[13px] text-[color:var(--t-fg2)] leading-snug">{v}</dd>
                   </div>
                 ))}
                 <div>
-                  <span className="text-[color:var(--cfg-dim)] block">Ground Clearance</span>
-                  <span className="text-[color:var(--cfg-fg2)] font-medium mt-0.5 block">
+                  <dt className="text-xs text-[color:var(--t-dim)]">Ground clearance</dt>
+                  <dd className="mt-0.5 font-mono-num text-[13px] text-[color:var(--t-fg2)] leading-snug">
                     {currentPlatform.stockSpecs.groundClearance}
                     {selectedSuspension.liftInches > 0 && clearanceMm && (
-                      <span className="text-[color:var(--cfg-good)]"> → ~{clearanceMm} mm</span>
+                      <span className="text-[color:var(--t-good)]"> to about {clearanceMm} mm</span>
                     )}
-                  </span>
+                  </dd>
                   {selectedSuspension.liftInches > 0 && (
-                    <span className="text-[10px] text-[color:var(--cfg-dim)] block mt-0.5">suspension lift only, tyres excluded</span>
+                    <dd className="text-[11px] text-[color:var(--t-dim)] mt-0.5">Lift only, tyres not included</dd>
                   )}
                 </div>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-[color:var(--cfg-warnbg)] border border-[color:var(--cfg-warnborder)] text-xs text-[color:var(--cfg-fg2)] flex items-start gap-3">
-              <Info className="w-4 h-4 text-[color:var(--cfg-accent)] shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-[color:var(--cfg-fg)] font-medium">Bespoke Spec Sheets Integration:</strong>{' '}
-                Our engineering team will update these specs with your vehicle’s factory build card or custom donor options. If you have the original RC or spec preferences, share them directly for a tailored blueprint.
-              </div>
+              </dl>
             </div>
           </div>
 
-          {/* Right: Controls & Summary */}
-          <div className="lg:col-span-5 flex flex-col gap-6 min-w-0">
-            <div className="bg-[color:var(--cfg-panel)] rounded-xl border border-[color:var(--cfg-border)] p-5">
-              {/* Category tabs */}
-              <div
-                role="tablist"
-                aria-label="Customisation categories"
-                className="flex items-center gap-1 overflow-x-auto pb-2 border-b border-[color:var(--cfg-border)] mb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-                {CATEGORIES.map((cat, idx) => {
-                  const active = activeCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      ref={(el) => { tabRefs.current[cat.id] = el; }}
-                      role="tab"
-                      id={`cfg-tab-${cat.id}`}
-                      aria-selected={active}
-                      aria-controls={`cfg-panel-${cat.id}`}
-                      tabIndex={active ? 0 : -1}
-                      onClick={() => setActiveCategory(cat.id)}
-                      onKeyDown={(e) => handleTabKey(e, idx)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/70 ${
-                        active ? 'bg-amber-500 text-black font-semibold' : 'text-[color:var(--cfg-muted)] hover:text-[color:var(--cfg-fg)]'
-                      }`}
-                    >
-                      {cat.num}. {cat.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Current choice for this category */}
-              <div className="flex items-center justify-between gap-3 mb-3 text-[11px] font-mono-num">
-                <span className="text-[color:var(--cfg-dim)]">Step {activeIdx + 1} of {CATEGORIES.length}</span>
-                <span className="text-[color:var(--cfg-accent2)] truncate" title={currentSelectionLabel(activeCategory)}>
-                  {currentSelectionLabel(activeCategory)}
-                </span>
-              </div>
-
-              <div
-                role="tabpanel"
-                id={`cfg-panel-${activeCategory}`}
-                aria-labelledby={`cfg-tab-${activeCategory}`}
-                className="max-h-[26rem] overflow-y-auto pr-1 -mr-1"
-              >
-                {activeCategory === 'paint' && (
-                  <div className="space-y-3">
-                    <div className="text-xs text-[color:var(--cfg-muted)]">
-                      High-durability 2K polyurethane formulations designed to endure Kodagu monsoon humidity.
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {PAINT_OPTIONS.map((paint) => {
-                        const isSelected = config.paintId === paint.id;
-                        return (
-                          <button
-                            key={paint.id}
-                            aria-pressed={isSelected}
-                            onClick={() => setConfig({ ...config, paintId: paint.id })}
-                            className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/70 ${
-                              isSelected
-                                ? 'border-amber-500 bg-[color:var(--cfg-cardsel)] text-[color:var(--cfg-fg)]'
-                                : 'border-[color:var(--cfg-border)] bg-[color:var(--cfg-card)] text-[color:var(--cfg-fg2)] hover:border-[color:var(--cfg-borderstrong)]'
-                            }`}
-                          >
-                            <div
-                              className="w-7 h-7 rounded-full shrink-0 border border-[color:var(--cfg-borderstrong)] shadow-inner"
-                              style={{ backgroundColor: paint.hex }}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="text-xs font-semibold truncate text-[color:var(--cfg-fg)]">{paint.name}</div>
-                              <div className="text-[11px] text-[color:var(--cfg-accent2)] truncate">{paint.finish}</div>
-                              {paint.inspiration && (
-                                <div className="text-[10px] text-[color:var(--cfg-dim)] truncate">{paint.inspiration}</div>
-                              )}
-                            </div>
-                            {isSelected && <Check className="w-4 h-4 text-[color:var(--cfg-accent)] shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {activeCategory === 'top' && (
-                  <div className="space-y-2.5">
-                    {TOP_OPTIONS.map((top) => {
-                      const isSelected = config.topId === top.id;
-                      return (
-                        <button key={top.id} aria-pressed={isSelected} onClick={() => setConfig({ ...config, topId: top.id })} className={cardClass(isSelected)}>
-                          <div>
-                            <div className="text-xs font-semibold text-[color:var(--cfg-fg)]">{top.name}</div>
-                            <div className="text-[11px] text-[color:var(--cfg-muted)] mt-1">{top.description}</div>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-[color:var(--cfg-accent)] shrink-0 mt-0.5" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {activeCategory === 'suspension' && (
-                  <div className="space-y-2.5">
-                    {SUSPENSION_OPTIONS.map((susp) => {
-                      const isSelected = config.suspensionId === susp.id;
-                      return (
-                        <button key={susp.id} aria-pressed={isSelected} onClick={() => setConfig({ ...config, suspensionId: susp.id })} className={cardClass(isSelected)}>
-                          <div>
-                            <div className="text-xs font-semibold text-[color:var(--cfg-fg)] flex flex-wrap items-center gap-2">
-                              <span>{susp.name}</span>
-                              {susp.liftInches > 0 && (
-                                <span className="text-[10px] px-1.5 py-0.5 bg-[color:var(--cfg-goodbg)] text-[color:var(--cfg-good)] border border-[color:var(--cfg-goodborder)] rounded">
-                                  +{susp.liftInches}&quot; LIFT
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-[color:var(--cfg-muted)] mt-1">{susp.description}</div>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-[color:var(--cfg-accent)] shrink-0 mt-0.5" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {activeCategory === 'wheels' && (
-                  <div className="space-y-2.5">
-                    {WHEEL_OPTIONS.map((wh) => {
-                      const isSelected = config.wheelId === wh.id;
-                      return (
-                        <button key={wh.id} aria-pressed={isSelected} onClick={() => setConfig({ ...config, wheelId: wh.id })} className={cardClass(isSelected)}>
-                          <div>
-                            <div className="text-xs font-semibold text-[color:var(--cfg-fg)]">{wh.name}</div>
-                            <div className="text-[11px] font-mono-num text-[color:var(--cfg-accent2)] mt-0.5">Rim: {wh.rimSpec}</div>
-                            <div className="text-[11px] text-[color:var(--cfg-muted)] mt-1">{wh.description}</div>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-[color:var(--cfg-accent)] shrink-0 mt-0.5" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {activeCategory === 'armor' && (
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between text-xs text-[color:var(--cfg-muted)] mb-1">
-                      <span>Heavy-duty accessories fabricated in our Matturu metal shop. Pick any combination.</span>
-                    </div>
-                    <div className="flex gap-2 text-[11px]">
+          {/* Steps + build sheet */}
+          <div className="flex flex-col gap-6 min-w-0">
+            <div className="rounded-xl border border-[color:var(--t-border)] bg-[color:var(--t-panel)] divide-y divide-[color:var(--t-border)]">
+              {STEPS.map((step) => {
+                const open = openStep === step.id;
+                return (
+                  <div key={step.id} ref={(el) => { stepRefs.current[step.id] = el; }}>
+                    <h3>
                       <button
-                        onClick={() => setConfig({ ...config, selectedArmorIds: ARMOR_OPTIONS.map((a) => a.id) })}
-                        className="px-2 py-1 rounded border border-[color:var(--cfg-borderstrong)] text-[color:var(--cfg-fg2)] hover:text-[color:var(--cfg-fg)]"
+                        id={`step-btn-${step.id}`}
+                        aria-expanded={open}
+                        aria-controls={`step-panel-${step.id}`}
+                        onClick={() => toggleStep(step.id)}
+                        className={`w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-[color:var(--t-panel2)] transition-colors first:rounded-t-xl ${focusRing}`}
                       >
-                        Select all
+                        <span className="text-[15px] font-semibold text-[color:var(--t-fg)] shrink-0">{step.label}</span>
+                        {changedStep[step.id] && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--t-accent)] shrink-0" title="Changed from the default build" />
+                        )}
+                        <span className="ml-auto text-[13px] text-[color:var(--t-muted)] truncate text-right">
+                          {stepValue(step.id)}
+                        </span>
+                        <ChevronDown
+                          className={`w-4 h-4 text-[color:var(--t-dim)] shrink-0 transition-transform duration-200 motion-reduce:transition-none ${open ? 'rotate-180' : ''}`}
+                          aria-hidden
+                        />
                       </button>
-                      <button
-                        onClick={() => setConfig({ ...config, selectedArmorIds: [] })}
-                        className="px-2 py-1 rounded border border-[color:var(--cfg-borderstrong)] text-[color:var(--cfg-fg2)] hover:text-[color:var(--cfg-fg)]"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                    {ARMOR_OPTIONS.map((arm) => {
-                      const isChecked = config.selectedArmorIds.includes(arm.id);
-                      return (
-                        <button
-                          key={arm.id}
-                          role="checkbox"
-                          aria-checked={isChecked}
-                          onClick={() => toggleArmor(arm.id)}
-                          className={cardClass(isChecked)}
+                    </h3>
+                    <AnimatePresence initial={false}>
+                      {open && (
+                        <motion.div
+                          key="panel"
+                          id={`step-panel-${step.id}`}
+                          role="region"
+                          aria-labelledby={`step-btn-${step.id}`}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.5, ease: EASE }}
+                          className="overflow-hidden"
                         >
-                          <div className="flex items-start gap-3">
-                            <div
-                              className={`w-4 h-4 mt-0.5 rounded border flex items-center justify-center shrink-0 ${
-                                isChecked ? 'bg-amber-500 border-amber-500 text-black' : 'border-[color:var(--cfg-borderstrong)] bg-[color:var(--cfg-card)]'
-                              }`}
-                            >
-                              {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                            </div>
-                            <div>
-                              <div className="text-xs font-semibold text-[color:var(--cfg-fg)]">{arm.name}</div>
-                              <div className="text-[11px] text-[color:var(--cfg-muted)] mt-0.5">{arm.description}</div>
-                            </div>
+                          <div className="px-4 sm:px-5 pb-5">
+                            {renderStep(step.id)}
+                            {step.id !== 'interior' && (
+                              <div className="mt-3 flex justify-end">
+                                <button
+                                  onClick={() => goNext(step.id)}
+                                  className={`text-[13px] font-medium text-[color:var(--t-accent)] hover:underline underline-offset-2 rounded ${focusRing}`}
+                                >
+                                  Next: {STEPS[STEPS.findIndex((s) => s.id === step.id) + 1].label}
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        </button>
-                      );
-                    })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                )}
-
-                {activeCategory === 'interior' && (
-                  <div className="space-y-2.5">
-                    {INTERIOR_OPTIONS.map((int) => {
-                      const isSelected = config.interiorId === int.id;
-                      return (
-                        <button key={int.id} aria-pressed={isSelected} onClick={() => setConfig({ ...config, interiorId: int.id })} className={cardClass(isSelected)}>
-                          <div>
-                            <div className="text-xs font-semibold text-[color:var(--cfg-fg)]">{int.name}</div>
-                            <div className="text-[11px] font-mono-num text-[color:var(--cfg-accent2)] mt-0.5">{int.material}</div>
-                            <div className="text-[11px] text-[color:var(--cfg-muted)] mt-1">{int.description}</div>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-[color:var(--cfg-accent)] shrink-0 mt-0.5" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Step navigation */}
-              <div className="mt-4 pt-3 border-t border-[color:var(--cfg-border)] flex items-center justify-between">
-                <button
-                  onClick={() => goStep(-1)}
-                  disabled={activeIdx === 0}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg text-[color:var(--cfg-fg2)] hover:text-[color:var(--cfg-fg)] disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="w-4 h-4" /> Back
-                </button>
-                <button
-                  onClick={() => goStep(1)}
-                  disabled={activeIdx === CATEGORIES.length - 1}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg text-[color:var(--cfg-fg2)] hover:text-[color:var(--cfg-fg)] disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  Next: {CATEGORIES[Math.min(activeIdx + 1, CATEGORIES.length - 1)].label} <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+                );
+              })}
             </div>
 
-            {/* Advisories */}
             {advisories.length > 0 && (
               <div className="space-y-2" aria-live="polite">
                 {advisories.map((a) => (
                   <div
                     key={a.id}
-                    className={`p-3 rounded-lg border text-xs flex items-start gap-2.5 ${
+                    className={`p-3.5 rounded-lg border text-sm flex items-start gap-3 ${
                       a.level === 'caution'
-                        ? 'bg-[color:var(--cfg-warnbg)] border-[color:var(--cfg-warnborder)] text-[color:var(--cfg-warnfg)]'
-                        : 'bg-[color:var(--cfg-card)] border-[color:var(--cfg-borderstrong)] text-[color:var(--cfg-fg2)]'
+                        ? 'bg-[color:var(--t-warnbg)] border-[color:var(--t-warnborder)]'
+                        : 'bg-[color:var(--t-card)] border-[color:var(--t-border)]'
                     }`}
                   >
                     {a.level === 'caution' ? (
-                      <TriangleAlert className="w-4 h-4 text-[color:var(--cfg-accent2)] shrink-0 mt-0.5" />
+                      <TriangleAlert className="w-4 h-4 text-[color:var(--t-accent)] shrink-0 mt-0.5" aria-hidden />
                     ) : (
-                      <Info className="w-4 h-4 text-[color:var(--cfg-muted)] shrink-0 mt-0.5" />
+                      <Info className="w-4 h-4 text-[color:var(--t-dim)] shrink-0 mt-0.5" aria-hidden />
                     )}
                     <div>
-                      <div className="font-semibold text-[color:var(--cfg-fg)]">{a.title}</div>
-                      <div className="text-[color:var(--cfg-muted)] mt-0.5">{a.detail}</div>
+                      <div className="font-semibold text-[color:var(--t-fg)]">{a.title}</div>
+                      <div className="text-[13px] text-[color:var(--t-muted)] mt-0.5 leading-relaxed">{a.detail}</div>
                     </div>
                   </div>
                 ))}
-                <div className="text-[10px] text-[color:var(--cfg-dim)] px-1">Advisory only. Nothing is blocked; we confirm fitment on your donor vehicle.</div>
+                <p className="text-xs text-[color:var(--t-dim)] px-1">
+                  These are suggestions only. Nothing is blocked, and the workshop checks fitment on your vehicle.
+                </p>
               </div>
             )}
 
-            {/* Summary & Quote */}
-            <div className="p-5 bg-[color:var(--cfg-panel2)] rounded-xl border border-[color:var(--cfg-borderstrong)] shadow-xl">
-              <div className="flex items-center justify-between gap-3 pb-3 border-b border-[color:var(--cfg-border)]">
+            {/* Build sheet */}
+            <div className="rounded-xl border border-[color:var(--t-borderstrong)] bg-[color:var(--t-panel)] shadow-[0_1px_0_0_var(--t-border),0_12px_30px_-18px_rgb(0_0_0/0.45)]">
+              <div className="px-5 pt-5 pb-4 flex items-end justify-between gap-4">
                 <div className="min-w-0">
-                  <span className="text-xs font-mono-num text-[color:var(--cfg-accent)] uppercase tracking-wider block">
-                    Bespoke Specification Summary
-                  </span>
-                  <span className="text-base font-bold text-[color:var(--cfg-fg)] font-display block truncate">
-                    {currentPlatform.name}
-                  </span>
+                  <div className="font-display font-black text-2xl leading-none text-[color:var(--t-fg)] [font-stretch:75%]">
+                    Build sheet
+                  </div>
+                  <div className="text-[13px] text-[color:var(--t-muted)] mt-1.5 truncate">{currentPlatform.name}</div>
                 </div>
-                <div className="text-right shrink-0">
-                  <span className="text-xs text-[color:var(--cfg-accent2)] font-semibold block font-mono-num">Official Workshop Quote</span>
-                  <span className="text-xs text-[color:var(--cfg-muted)]">
-                    {isModified ? `${changeCount} of 6 changed` : 'Default build'}
-                  </span>
+                <div className="text-xs text-[color:var(--t-dim)] text-right shrink-0">
+                  {isModified ? `${changeCount} of 6 changed` : 'Default build'}
                 </div>
               </div>
 
-              <div className="py-3 space-y-1.5 text-xs font-mono-num border-b border-[color:var(--cfg-border)] text-[color:var(--cfg-fg2)]">
-                <SummaryRow label="Paint" value={`${selectedPaint.name}`} changed={config.paintId !== baseline.paintId} />
-                <SummaryRow label="Canopy / Top" value={selectedTop.name} changed={config.topId !== baseline.topId} />
-                <SummaryRow
+              <div className="mx-5 border-t border-dashed border-[color:var(--t-borderstrong)]" />
+
+              <dl className="px-5 py-4 space-y-2.5">
+                <SheetRow label="Paint" value={selectedPaint.name} changed={changedStep.paint} />
+                <SheetRow label="Roof" value={selectedTopColor ? `${selectedTop.name}, ${selectedTopColor.name}` : selectedTop.name} changed={changedStep.top} />
+                <SheetRow
                   label="Suspension"
-                  value={selectedSuspension.liftInches ? `+${selectedSuspension.liftInches}" ${selectedSuspension.name.replace(/^\+[\d.]+"\s*/, '')}` : selectedSuspension.name}
-                  changed={config.suspensionId !== baseline.suspensionId}
+                  value={selectedSuspension.liftInches ? `+${selectedSuspension.liftInches}" lift` : 'Stock height'}
+                  changed={changedStep.suspension}
                 />
-                <SummaryRow label="Wheels & Tyres" value={selectedWheel.tyreSpec} changed={config.wheelId !== baseline.wheelId} />
-                <SummaryRow label="Cabin Trim" value={selectedInterior.name} changed={config.interiorId !== baseline.interiorId} />
-                <div>
-                  <div className="flex justify-between">
-                    <span className="text-[color:var(--cfg-muted)]">Armor &amp; Accessories</span>
-                    <span className="text-[color:var(--cfg-fg)]">{selectedArmor.length} of {ARMOR_OPTIONS.length}</span>
+                <SheetRow label="Tyres" value={selectedWheel.tyreSpec} changed={changedStep.wheels} />
+                <SheetRow label="Interior" value={selectedInterior.name} changed={changedStep.interior} />
+                <SheetRow
+                  label="Armor"
+                  value={selectedArmor.length ? `${selectedArmor.length} of ${ARMOR_OPTIONS.length}` : 'None'}
+                  changed={changedStep.armor}
+                />
+                {selectedArmor.length > 0 && (
+                  <ul className="pl-4 pt-0.5 space-y-1 text-[13px] text-[color:var(--t-muted)] list-disc marker:text-[color:var(--t-dim)]">
+                    {selectedArmor.map((a) => (
+                      <li key={a.id}>{a.name}</li>
+                    ))}
+                  </ul>
+                )}
+                {selectedSuspension.liftInches > 0 && clearanceMm && (
+                  <SheetRow label="Ground clearance" value={`about ${clearanceMm} mm`} />
+                )}
+              </dl>
+
+              <div className="mx-5 border-t border-dashed border-[color:var(--t-borderstrong)]" />
+
+              <div className="px-5 pt-4 pb-5">
+                <p className="text-[13px] text-[color:var(--t-muted)] leading-relaxed">
+                  No price is shown on purpose. Coorg Auto Works quotes after inspecting your vehicle and engine.
+                </p>
+
+                <div className="mt-4 flex flex-col gap-2.5">
+                  <a
+                    href={whatsappHref()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold text-sm transition-colors ${focusRing}`}
+                  >
+                    <Send className="w-4 h-4" />
+                    Send this build to the workshop
+                  </a>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      onClick={handleCopySpec}
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium border border-[color:var(--t-borderstrong)] text-[color:var(--t-fg2)] hover:bg-[color:var(--t-raised)] transition-colors ${focusRing}`}
+                    >
+                      <FileText className="w-4 h-4" />
+                      {copied === 'spec' ? 'Copied' : copied === 'failed' ? 'Copy failed' : 'Copy spec'}
+                    </button>
+                    <button
+                      onClick={handleCopyLink}
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium border border-[color:var(--t-borderstrong)] text-[color:var(--t-fg2)] hover:bg-[color:var(--t-raised)] transition-colors ${focusRing}`}
+                    >
+                      <Link2 className="w-4 h-4" />
+                      {copied === 'link' ? 'Link copied' : 'Copy link'}
+                    </button>
                   </div>
-                  {selectedArmor.length > 0 && (
-                    <ul className="mt-1 ml-3 space-y-0.5 text-[11px] text-[color:var(--cfg-muted)] list-disc list-inside">
-                      {selectedArmor.map((a) => (
-                        <li key={a.id}>{a.name}</li>
-                      ))}
-                    </ul>
+                  {onBookService && (
+                    <button
+                      onClick={() => onBookService(currentPlatform.name)}
+                      className={`w-full px-3 py-2.5 rounded-lg text-sm font-semibold text-[color:var(--t-accent)] hover:bg-[color:var(--t-cardsel)] transition-colors ${focusRing}`}
+                    >
+                      Book a consultation for this build
+                    </button>
                   )}
                 </div>
-                {selectedSuspension.liftInches > 0 && clearanceMm && (
-                  <div className="flex justify-between pt-1 text-[color:var(--cfg-good)]">
-                    <span className="flex items-center gap-1"><ArrowUpFromLine className="w-3 h-3" /> Est. ground clearance</span>
-                    <span>~{clearanceMm} mm</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="py-2.5 text-[11px] text-[color:var(--cfg-muted)] leading-relaxed border-b border-[color:var(--cfg-border)]">
-                <span className="text-[color:var(--cfg-fg2)] font-medium">Company Pricing Note:</span> Actual fabrication and overhaul costs are determined by Coorg Auto Works following physical inspection of your donor vehicle and engine condition.
-              </div>
-
-              <div className="mt-4 flex flex-col gap-2.5">
-                <a
-                  href={whatsappHref()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold text-xs transition-colors whitespace-nowrap"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Send Spec to Workshop on WhatsApp</span>
-                </a>
-                <div className="flex gap-2.5">
-                  <button
-                    onClick={handleCopySpec}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-[color:var(--cfg-raised)] hover:bg-[color:var(--cfg-raisedhover)] text-[color:var(--cfg-fg2)] rounded-lg text-xs font-medium border border-[color:var(--cfg-borderstrong)] transition-colors whitespace-nowrap"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>{copied === 'spec' ? 'Copied!' : copied === 'failed' ? 'Copy failed' : 'Copy Spec'}</span>
-                  </button>
-                  <button
-                    onClick={handleCopyLink}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-[color:var(--cfg-raised)] hover:bg-[color:var(--cfg-raisedhover)] text-[color:var(--cfg-fg2)] rounded-lg text-xs font-medium border border-[color:var(--cfg-borderstrong)] transition-colors whitespace-nowrap"
-                  >
-                    <Link2 className="w-3.5 h-3.5" />
-                    <span>{copied === 'link' ? 'Link copied!' : 'Copy Build Link'}</span>
-                  </button>
-                </div>
-                {onBookService && (
-                  <button
-                    onClick={() => onBookService(currentPlatform.name)}
-                    className="w-full px-3 py-2.5 rounded-lg text-xs font-semibold border border-amber-600/60 text-[color:var(--cfg-accent2)] hover:bg-amber-500/10 transition-colors"
-                  >
-                    Book a Consultation for This Build
-                  </button>
-                )}
-              </div>
-
-              <div className="mt-3 text-[11px] text-[color:var(--cfg-dim)] text-center">
-                All vehicles fabricated and assembled on-site at Matturu workshop, Ponnampet, South Kodagu.
               </div>
             </div>
           </div>

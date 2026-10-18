@@ -118,3 +118,12 @@ html.lenis, html.lenis body { height: auto; }
 .caw-fade-in { animation: caw-fade .3s ease-out both; }
 .caw-rise-in { animation: caw-rise .55s cubic-bezier(.22,1,.36,1) both; }
 @media (prefers-reduced-motion: reduce) { .caw-fade-in, .caw-rise-in { animation: none; } }
+
+/* A search result flashes where it lands: an amber ring and a soft tint, three pulses. */
+@keyframes caw-flash {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; background-color: transparent; }
+  20%, 60% { box-shadow: 0 0 0 3px var(--t-accent); background-color: color-mix(in srgb, var(--t-accent) 14%, transparent); }
+  40%, 80% { box-shadow: 0 0 0 0 transparent; background-color: color-mix(in srgb, var(--t-accent) 6%, transparent); }
+}
+.caw-flash { animation: caw-flash 2.6s ease-in-out var(--flash-delay, 0ms) both; border-radius: 1rem; }
+@media (prefers-reduced-motion: reduce) { .caw-flash { animation: none; box-shadow: 0 0 0 3px var(--t-accent); } }

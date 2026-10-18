@@ -17,6 +17,8 @@ export function SmoothScroll() {
       prevent: (node: HTMLElement) => !!node.closest('.fixed, [data-lenis-prevent]'),
     });
 
+    (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
+
     const onClick = (e: MouseEvent) => {
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
       const a = (e.target as HTMLElement | null)?.closest('a[href^="#"]') as HTMLAnchorElement | null;
@@ -36,6 +38,7 @@ export function SmoothScroll() {
     document.addEventListener('click', onClick);
     return () => {
       document.removeEventListener('click', onClick);
+      delete (window as unknown as { __lenis?: Lenis }).__lenis;
       lenis.destroy();
     };
   }, []);

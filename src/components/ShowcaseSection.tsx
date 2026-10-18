@@ -10,6 +10,7 @@ import { ShowcaseBuild, VehiclePlatformId } from '../types';
 import { BuildGallery } from './BuildGallery';
 import { ArrowUpRight, X } from 'lucide-react';
 import { EASE, SectionHead } from '../motion/primitives';
+import { FLASH_DELAY_MS, HIGHLIGHT_EVENT, HighlightDetail, flashElement, scrollToEl, scrollToY } from '../lib/highlight';
 
 type Filter = 'all' | VehiclePlatformId;
 
@@ -60,11 +61,10 @@ const BuildCard: React.FC<{ build: ShowcaseBuild; onOpen: (b: ShowcaseBuild) => 
 const BuildItem = React.memo(function BuildItem({ build, onOpen }: { build: ShowcaseBuild; onOpen: (b: ShowcaseBuild) => void }) {
   return (
     <motion.div
-      layout="position"
-      initial={{ opacity: 0, scale: 0.92 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.92 }}
-      transition={{ duration: 0.5, ease: EASE }}
+      id={`build-${build.id}`}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: EASE }}
       className="shrink-0"
     >
       <BuildCard build={build} onOpen={onOpen} />
@@ -180,12 +180,43 @@ export const ShowcaseSection: React.FC = () => {
     };
   }, [builds.length]);
 
+  // A search result for one build clears the filter, brings that card into view and flashes it.
+  useEffect(() => {
+    const onHighlight = (e: Event) => {
+      const d = (e as CustomEvent<HighlightDetail>).detail;
+      if (d.section !== 'showcase' || !d.key) return;
+      d.handled = true;
+      setFilter('all');
+      window.setTimeout(() => {
+        const card = document.getElementById(`build-${d.key}`);
+        const outer = outerRef.current;
+        const track = trackRef.current;
+        if (!card || !outer || !track) return;
+        const lg = window.matchMedia('(min-width: 1024px)').matches;
+        const outerTop = outer.getBoundingClientRect().top + window.scrollY;
+        if (lg) {
+          // The row slides sideways as the page scrolls, so pick the scroll position that puts this card first in view.
+          const first = track.firstElementChild as HTMLElement | null;
+          const trackTravel = Math.max(1, track.scrollWidth - window.innerWidth);
+          const p = Math.min(1, Math.max(0, (card.offsetLeft - (first?.offsetLeft ?? 0)) / trackTravel));
+          scrollToY(outerTop + p * trackTravel);
+        } else {
+          scrollToEl(outer, 80);
+          window.setTimeout(() => card.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }), 500);
+        }
+        flashElement(card.firstElementChild as HTMLElement, FLASH_DELAY_MS + 100);
+      }, 200);
+    };
+    window.addEventListener(HIGHLIGHT_EVENT, onHighlight);
+    return () => window.removeEventListener(HIGHLIGHT_EVENT, onHighlight);
+  }, []);
+
   const { scrollYProgress } = useScroll({ target: outerRef, offset: ['start start', 'end end'] });
   const x = useTransform(scrollYProgress, [0, 1], [0, -travel]);
   const barScale = useTransform(scrollYProgress, [0, 1], [0.04, 1]);
 
   return (
-    <section id="showcase" className="bg-[color:var(--t-bg)] pt-24 sm:pt-32 scroll-mt-16">
+    <section id="showcase" className="overflow-x-clip bg-[color:var(--t-bg)] pt-24 sm:pt-32 scroll-mt-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHead
           title="Builds that left the workshop"
@@ -223,13 +254,11 @@ export const ShowcaseSection: React.FC = () => {
           <motion.div
             ref={trackRef}
             style={pinned ? { x } : undefined}
-            className="flex w-max snap-x snap-mandatory gap-5 px-4 pb-16 sm:px-6 max-lg:w-full max-lg:overflow-x-auto max-lg:[scrollbar-width:none] lg:gap-6 lg:px-[max(2rem,calc((100vw-80rem)/2+2rem))] lg:pb-0 lg:pr-24"
+            className="relative flex w-max snap-x snap-mandatory gap-5 px-4 pb-16 sm:px-6 max-lg:w-full max-lg:overflow-x-auto max-lg:[scrollbar-width:none] lg:gap-6 lg:px-[max(2rem,calc((100vw-80rem)/2+2rem))] lg:pb-0 lg:pr-24"
           >
-            <AnimatePresence mode="popLayout" initial={false}>
-              {builds.map((b) => (
-                <BuildItem key={b.id} build={b} onOpen={setSelected} />
-              ))}
-            </AnimatePresence>
+            {builds.map((b) => (
+              <BuildItem key={`${filter}-${b.id}`} build={b} onOpen={setSelected} />
+            ))}
           </motion.div>
 
           {pinned && travel > 0 && (

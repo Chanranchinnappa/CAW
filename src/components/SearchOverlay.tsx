@@ -1,8 +1,29 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { MessageSquare, Search, X } from 'lucide-react';
-import { search } from '../lib/search';
+import { SearchItem, search } from '../lib/search';
 import { WORKSHOP_INFO } from '../data/cawData';
+import { flashElement, requestHighlight } from '../lib/highlight';
+
+/** Bold the words in the text that match what was typed. */
+const Marked: React.FC<{ text: string; q: string }> = ({ text, q }) => {
+  const words = q.toLowerCase().split(/\s+/).filter((w) => w.length > 1).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  if (!words.length) return <>{text}</>;
+  const parts = text.split(new RegExp(`(${words.join('|')})`, 'ig'));
+  return (
+    <>
+      {parts.map((p, i) =>
+        i % 2 === 1 ? (
+          <mark key={i} className="rounded-sm bg-[color:color-mix(in_srgb,var(--t-accent)_28%,transparent)] px-0.5 text-inherit">
+            {p}
+          </mark>
+        ) : (
+          <React.Fragment key={i}>{p}</React.Fragment>
+        ),
+      )}
+    </>
+  );
+};
 
 const SUGGESTIONS = ['Engine rebuild', 'Irrigation pump', 'Jeep trailer', 'Gypsy', 'Power steering', 'Phone number'];
 
@@ -29,16 +50,22 @@ export const SearchOverlay: React.FC<Props> = ({ open, onClose }) => {
 
   useEffect(() => setSel(0), [q]);
 
-  const go = (target: string) => {
+  const go = (item: SearchItem) => {
     onClose();
-    // The page's smooth-scroll handler picks up clicks on hash links.
+    // Give the search box a moment to leave, then ask the page to scroll to the result and flash it.
     setTimeout(() => {
+      const d = requestHighlight({ section: item.target, key: item.key });
+      if (d.handled) return;
+      // Sections that do not flash a single item: scroll there, then flash the whole section.
+      const el = document.getElementById(item.target);
+      if (!el) return;
       const a = document.createElement('a');
-      a.href = `#${target}`;
+      a.href = `#${item.target}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-    }, 60);
+      flashElement(el, 1700);
+    }, 120);
   };
 
   const onKey = (e: React.KeyboardEvent) => {
@@ -49,7 +76,7 @@ export const SearchOverlay: React.FC<Props> = ({ open, onClose }) => {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSel((s) => Math.max(0, s - 1));
-    } else if (e.key === 'Enter' && results[sel]) go(results[sel].target);
+    } else if (e.key === 'Enter' && results[sel]) go(results[sel]);
   };
 
   const waText = encodeURIComponent(`Hello Coorg Auto Works! I was looking for: ${q}`);
@@ -118,15 +145,15 @@ export const SearchOverlay: React.FC<Props> = ({ open, onClose }) => {
                   {results.map((r, i) => (
                     <li key={r.id} role="option" aria-selected={i === sel}>
                       <button
-                        onClick={() => go(r.target)}
+                        onClick={() => go(r)}
                         onMouseEnter={() => setSel(i)}
                         className={`flex w-full items-center justify-between gap-4 rounded-xl px-3 py-3 text-left focus:outline-none ${
                           i === sel ? 'bg-[color:var(--t-raised)]' : ''
                         }`}
                       >
                         <span className="min-w-0">
-                          <span className="block truncate font-medium text-[color:var(--t-fg)]">{r.title}</span>
-                          <span className="block truncate text-sm text-[color:var(--t-muted)]">{r.detail}</span>
+                          <span className="block truncate font-medium text-[color:var(--t-fg)]"><Marked text={r.title} q={q} /></span>
+                          <span className="block truncate text-sm text-[color:var(--t-muted)]"><Marked text={r.detail} q={q} /></span>
                         </span>
                         <span className="shrink-0 rounded-full border border-[color:var(--t-border)] px-2.5 py-0.5 text-xs text-[color:var(--t-muted)]">{r.kind}</span>
                       </button>

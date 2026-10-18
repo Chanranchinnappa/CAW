@@ -8,6 +8,8 @@ export interface SearchItem {
   detail: string;
   /** Section on the page to jump to. */
   target: string;
+  /** The item inside the section to flash: a service number or a build id. */
+  key?: string;
   /** Extra words people might type. */
   words: string;
 }
@@ -28,6 +30,7 @@ export const SEARCH_ITEMS: SearchItem[] = [
     kind: 'Service' as const,
     detail: s.tagline,
     target: 'services',
+    key: String(i),
     words: `${s.description} ${s.option}`,
   })),
   ...SHOWCASE_BUILDS.map((b) => ({
@@ -36,6 +39,7 @@ export const SEARCH_ITEMS: SearchItem[] = [
     kind: 'Build' as const,
     detail: `${b.category}, ${b.clientRegion}, ${b.year}`,
     target: 'showcase',
+    key: b.id,
     words: `${b.engine} ${b.platform} ${b.story}`,
   })),
   ...VEHICLES.map((v, i) => ({

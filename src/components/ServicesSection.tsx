@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowRight, Plus } from 'lucide-react';
 import { EASE, SectionHead } from '../motion/primitives';
+import { FLASH_DELAY_MS, HIGHLIGHT_EVENT, HighlightDetail, flashElement, scrollToEl } from '../lib/highlight';
 
 interface ServicesSectionProps {
   onSelectService: (serviceTitle: string) => void;
@@ -115,6 +116,26 @@ export const SERVICES = [
 
 export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectService }) => {
   const [open, setOpen] = useState<number | null>(0);
+  const rows = useRef<(HTMLLIElement | null)[]>([]);
+
+  // A search result for one service opens that row, scrolls to it and flashes it.
+  useEffect(() => {
+    const onHighlight = (e: Event) => {
+      const d = (e as CustomEvent<HighlightDetail>).detail;
+      if (d.section !== 'services' || d.key === undefined) return;
+      const i = Number(d.key);
+      const el = rows.current[i];
+      if (!el) return;
+      d.handled = true;
+      setOpen(i);
+      window.setTimeout(() => {
+        scrollToEl(el, 88);
+        flashElement(el, FLASH_DELAY_MS);
+      }, 120);
+    };
+    window.addEventListener(HIGHLIGHT_EVENT, onHighlight);
+    return () => window.removeEventListener(HIGHLIGHT_EVENT, onHighlight);
+  }, []);
 
   return (
     <section id="services" className="bg-[color:var(--t-page)] py-24 sm:py-32 scroll-mt-16">
@@ -128,7 +149,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
           {SERVICES.map((srv, i) => {
             const isOpen = open === i;
             return (
-              <li key={srv.title} className="border-b border-[color:var(--t-border)]">
+              <li key={srv.title} ref={(el) => { rows.current[i] = el; }} className="border-b border-[color:var(--t-border)]">
                 <button
                   onClick={() => setOpen(isOpen ? null : i)}
                   aria-expanded={isOpen}

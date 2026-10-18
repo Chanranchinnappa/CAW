@@ -155,7 +155,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
 
 /** Platforms we work on, then the numbers. Sits straight under the hero. */
 export const ProofBand: React.FC = () => (
-  <section className="border-b border-[color:var(--t-border)] bg-[color:var(--t-page)]">
+  <section id="brands" className="scroll-mt-16 border-b border-[color:var(--t-border)] bg-[color:var(--t-page)]">
     <VelocityMarquee items={['Mahindra', 'Maruti Suzuki', 'Tata', 'Toyota', 'Hyundai', 'Honda', 'Force', 'Willys', 'Ashok Leyland', 'Kirloskar', 'Skoda', 'Volkswagen', 'Mercedes Benz']} />
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
       <dl className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">

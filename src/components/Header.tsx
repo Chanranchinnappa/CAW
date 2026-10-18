@@ -5,7 +5,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Menu, X, Phone, MessageSquare, Lock, Sun, Moon } from 'lucide-react';
+import { Menu, X, Phone, MessageSquare, Lock, Sun, Moon, Search } from 'lucide-react';
+import { SearchOverlay } from './SearchOverlay';
 import { useSiteTheme } from '../theme';
 import { WORKSHOP_INFO } from '../data/cawData';
 import { EASE } from '../motion/primitives';
@@ -28,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
   const [menuOpen, setMenuOpen] = useState(false);
   const [active, setActive] = useState('');
   const [hidden, setHidden] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [theme, setTheme] = useSiteTheme();
   const lastY = useRef(0);
 
@@ -52,10 +54,25 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // "/" or Ctrl+K opens search from anywhere, unless the person is typing in a field.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+      if ((e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
   const showHeader = !hidden || menuOpen;
 
   return (
+    <>
     <motion.header
       animate={{ y: showHeader ? 0 : '-101%' }}
       transition={{ duration: 0.5, ease: EASE }}
@@ -92,6 +109,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
 
           <div className="hidden shrink-0 items-center gap-2 lg:flex">
             <button
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search the site"
+              title="Search ( / )"
+              className={`rounded-full p-2 text-[color:var(--t-muted)] transition-colors hover:bg-[color:var(--t-raised)] hover:text-[color:var(--t-fg)] ${ring}`}
+            >
+              <Search className="h-4 w-4" />
+            </button>
+            <button
               onClick={toggleTheme}
               aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
               className={`rounded-full p-2 text-[color:var(--t-muted)] transition-colors hover:bg-[color:var(--t-raised)] hover:text-[color:var(--t-fg)] ${ring}`}
@@ -127,7 +152,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
             )}
           </div>
 
-          <div className="flex items-center gap-2 lg:hidden">
+          <div className="flex items-center gap-1 lg:hidden">
+            <button
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search the site"
+              className={`rounded-full p-2 text-[color:var(--t-fg2)] ${ring}`}
+            >
+              <Search className="h-5 w-5" />
+            </button>
             <button onClick={onOpenBooking} className={`rounded-full bg-amber-500 px-4 py-2 text-xs font-semibold text-black ${ring}`}>
               Book
             </button>
@@ -207,5 +239,26 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
       </AnimatePresence>
 
     </motion.header>
+
+    <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+
+    {/* The header tucks away while you read down, so search keeps its own button on screen. */}
+    <AnimatePresence>
+      {hidden && !menuOpen && (
+        <motion.button
+          key="float-search"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.2 }}
+          onClick={() => setSearchOpen(true)}
+          aria-label="Search the site"
+          className={`fixed right-3 top-3 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--t-border)] bg-[color:color-mix(in_srgb,var(--t-page)_88%,transparent)] text-[color:var(--t-fg)] shadow-lg backdrop-blur-xl ${ring}`}
+        >
+          <Search className="h-5 w-5" />
+        </motion.button>
+      )}
+    </AnimatePresence>
+    </>
   );
 };

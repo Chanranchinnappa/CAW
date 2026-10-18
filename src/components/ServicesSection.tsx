@@ -12,7 +12,7 @@ interface ServicesSectionProps {
   onSelectService: (serviceTitle: string) => void;
 }
 
-const SERVICES = [
+export const SERVICES = [
   {
     title: 'Vehicle restoration and rebuilds',
     option: 'Vehicle Restoration & Rebuild',

@@ -21,10 +21,9 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'gypsy', label: 'Gypsy' },
 ];
 
-const BuildCard: React.FC<{ build: ShowcaseBuild; onOpen: () => void }> = ({ build, onOpen }) => (
+const BuildCard: React.FC<{ build: ShowcaseBuild; onOpen: (b: ShowcaseBuild) => void }> = ({ build, onOpen }) => (
   <motion.button
-    layout
-    onClick={onOpen}
+    onClick={() => onOpen(build)}
     whileHover="hover"
     initial="rest"
     className="on-dark group relative flex h-[26rem] w-[80vw] shrink-0 snap-center flex-col justify-between overflow-hidden rounded-3xl p-6 text-left text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 sm:w-[46vw] lg:h-[min(34rem,calc(100svh-14rem))] lg:w-[30vw] lg:max-w-[28rem] lg:p-8"
@@ -57,6 +56,22 @@ const BuildCard: React.FC<{ build: ShowcaseBuild; onOpen: () => void }> = ({ bui
   </motion.button>
 );
 
+/** Memoised so opening the dialog does not re-measure and re-render every card. */
+const BuildItem = React.memo(function BuildItem({ build, onOpen }: { build: ShowcaseBuild; onOpen: (b: ShowcaseBuild) => void }) {
+  return (
+    <motion.div
+      layout="position"
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.92 }}
+      transition={{ duration: 0.5, ease: EASE }}
+      className="shrink-0"
+    >
+      <BuildCard build={build} onOpen={onOpen} />
+    </motion.div>
+  );
+});
+
 const BuildDialog: React.FC<{ build: ShowcaseBuild; onClose: () => void }> = ({ build, onClose }) => {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -71,11 +86,11 @@ const BuildDialog: React.FC<{ build: ShowcaseBuild; onClose: () => void }> = ({ 
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-0 sm:items-center sm:p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       onClick={onClose}
     >
       <motion.div
@@ -84,11 +99,11 @@ const BuildDialog: React.FC<{ build: ShowcaseBuild; onClose: () => void }> = ({ 
         aria-label={build.title}
         data-lenis-prevent
         onClick={(e) => e.stopPropagation()}
-        initial={{ y: 60, opacity: 0, scale: 0.97 }}
-        animate={{ y: 0, opacity: 1, scale: 1 }}
-        exit={{ y: 40, opacity: 0, scale: 0.98 }}
-        transition={{ duration: 0.55, ease: EASE }}
-        className="relative max-h-[92svh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-[color:var(--t-borderstrong)] bg-[color:var(--t-panel)] p-6 shadow-2xl sm:rounded-3xl sm:p-10"
+        initial={{ y: 28, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 16, opacity: 0 }}
+        transition={{ duration: 0.3, ease: EASE }}
+        className="relative max-h-[92svh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-[color:var(--t-borderstrong)] bg-[color:var(--t-panel)] p-6 shadow-2xl will-change-transform sm:rounded-3xl sm:p-10"
       >
         <button
           onClick={onClose}
@@ -212,17 +227,7 @@ export const ShowcaseSection: React.FC = () => {
           >
             <AnimatePresence mode="popLayout" initial={false}>
               {builds.map((b) => (
-                <motion.div
-                  key={b.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.92 }}
-                  transition={{ duration: 0.5, ease: EASE }}
-                  className="shrink-0"
-                >
-                  <BuildCard build={b} onOpen={() => setSelected(b)} />
-                </motion.div>
+                <BuildItem key={b.id} build={b} onOpen={setSelected} />
               ))}
             </AnimatePresence>
           </motion.div>

@@ -23,6 +23,9 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Keep the scrollbar's space reserved, so opening a dialog (which locks scrolling) does not shift the page sideways. */
+html { scrollbar-gutter: stable; }
+
 /* Custom subtle scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

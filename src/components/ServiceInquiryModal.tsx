@@ -65,7 +65,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm caw-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 caw-fade-in">
       <div data-lenis-prevent className="caw-rise-in relative w-full max-w-lg bg-[color:var(--t-panel)] rounded-2xl border border-[color:var(--t-borderstrong)] shadow-2xl p-6 sm:p-8 max-h-[95vh] overflow-y-auto">
         <button
           onClick={onClose}

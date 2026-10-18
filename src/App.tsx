@@ -9,6 +9,25 @@ import { MotionConfig } from 'motion/react';
 import { Hero, ProofBand } from './components/Hero';
 import { SmoothScroll } from './motion/SmoothScroll';
 import { ScrollProgress } from './motion/primitives';
+import { motion, useScroll, useTransform } from 'motion/react';
+
+/** The logo sits near the top of the screen. Clear over the hero, then a faint watermark for the rest of the page. */
+const FixedLogo: React.FC = () => {
+  const { scrollY } = useScroll();
+  const opacity = useTransform(scrollY, [0, 500], [0.4, 0.06]);
+  return (
+    <motion.img
+      aria-hidden="true"
+      src="/hero-logo.webp"
+      alt=""
+      width="640"
+      height="263"
+      decoding="async"
+      style={{ opacity }}
+      className="pointer-events-none fixed left-1/2 top-[15vh] z-30 w-[min(40vw,16rem)] -translate-x-1/2 select-none"
+    />
+  );
+};
 import { ServicesSection } from './components/ServicesSection';
 import { ShowcaseSection } from './components/ShowcaseSection';
 import { PipelineSection } from './components/PipelineSection';
@@ -129,6 +148,7 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <SmoothScroll />
     <ScrollProgress />
+    <FixedLogo />
     <div className="min-h-screen bg-[color:var(--t-page)] text-[color:var(--t-fg)] flex flex-col font-sans selection:bg-amber-500 selection:text-black">
       {/* Top Navigation Bar */}
       <Header

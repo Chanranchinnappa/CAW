@@ -19,20 +19,19 @@ import {
 
 /** Choices in the booking form. The value is what the service list sends when someone taps "Discuss this job". */
 export const SERVICE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'Jeep 4x4 Ground-Up Restoration', label: 'Jeep 4x4 Ground-Up Restoration' },
-  { value: 'Car Mechanical Services', label: 'Car Mechanical Services' },
+  { value: 'General Servicing, Inspection & Tuning', label: 'General Servicing, Inspection & Tuning (annual and car services)' },
+  { value: 'Vehicle Restoration & Rebuild', label: 'Vehicle Restoration & Rebuild' },
+  { value: 'Engine Overhaul & Rebuild', label: 'Engine Overhaul & Rebuild' },
+  { value: 'Gearbox, Transfer Case & Axle Servicing', label: 'Gearbox, Transfer Case & Axle Servicing' },
+  { value: 'Front Shackle Reversal & Suspension Lift', label: 'Suspension & Front Shackle Reversal' },
+  { value: 'Custom Bumper, Winch & Roll Cage Fabrication', label: 'Custom Bumper, Winch & Roll Cage Fabrication' },
+  { value: 'Complete Monsoon Rust Treatment & Respray', label: 'Rust Treatment & Respray' },
+  { value: 'Jeep Alterations', label: 'Jeep Alterations (power steering, disc brakes, hydraulic clutch)' },
+  { value: 'Jeep Trailer Build', label: 'Jeep Trailer Build' },
   { value: 'Irrigation Engine & Pump Building', label: 'Irrigation Self-Priming Engine & Pump Building' },
   { value: 'Underground HDPE Irrigation', label: 'Underground HDPE Irrigation Services' },
-  { value: 'Diesel Generator Build', label: 'Diesel Generator Build' },
   { value: 'Sprinkler Jet Set-up & Fabrication', label: 'Sprinkler Jet Set-up & Fabrication' },
-  { value: 'Jeep Trailer Build', label: 'Jeep Trailer Build' },
-  { value: 'Jeep Alterations', label: 'Jeep Alterations (power steering, disc brakes, hydraulic clutch)' },
-  { value: 'General 4x4 Mechanical Inspection', label: 'General 4x4 Mechanical Inspection & Tuning' },
-  { value: 'Engine Overhaul & Rebuild', label: 'Engine Overhaul & Rebuild' },
-  { value: 'Front Shackle Reversal & Suspension Lift', label: 'Front Shackle Reversal & Suspension Lift' },
-  { value: 'Differential Re-Gearing & Locking Hubs', label: 'Differential Re-Gearing & Locking Hubs' },
-  { value: 'Custom Bumper, Winch & Roll Cage Fabrication', label: 'Custom Bumper, Winch & Roll Cage Fabrication' },
-  { value: 'Complete Monsoon Rust Treatment & Respray', label: 'Complete Monsoon Rust Treatment & Respray' },
+  { value: 'Diesel Generator Build', label: 'Diesel Generator Build' },
 ];
 
 export const WORKSHOP_INFO = {
@@ -56,8 +55,7 @@ export const WORKSHOP_INFO = {
     whatsapp: '919945742410',
     email: 'builds@coorgautoworks.in',
     hours: 'Mon – Sat: 8:30 AM – 7:30 PM',
-    emergencyHours: '24/7 Estate Recovery & Winching Assistance',
-  },
+      },
   stats: [
     { label: 'Estate 4x4 Heritage', value: '30+ Years' },
     { label: 'Completed Rebuilds', value: '450+' },

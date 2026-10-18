@@ -170,7 +170,7 @@ const wrap = (min: number, max: number, v: number) => {
 };
 
 /** Big outlined type that drifts sideways and speeds up (and reverses) with your scroll speed. */
-export const VelocityMarquee: React.FC<{ items: string[]; baseVelocity?: number }> = ({ items, baseVelocity = -3.2 }) => {
+export const VelocityMarquee: React.FC<{ items: string[]; baseVelocity?: number }> = ({ items, baseVelocity = -2.24 }) => {
   const reduce = useReducedMotion();
   const baseX = useMotionValue(0);
   const { scrollY } = useScroll();

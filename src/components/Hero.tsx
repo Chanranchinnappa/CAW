@@ -66,9 +66,6 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
           )}
         </motion.div>
       </motion.div>
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[17%] -z-[5] flex -translate-y-1/2 justify-center md:top-[33%]">
-        <img src="/hero-logo.webp" alt="" width="640" height="263" decoding="async" className="w-[min(70vw,34rem)] opacity-40 drop-shadow-[0_4px_24px_rgba(0,0,0,0.35)]" />
-      </div>
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(100deg,rgb(8_10_14/0.6)_0%,rgb(8_10_14/0.32)_50%,rgb(8_10_14/0.08)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-3/5 bg-gradient-to-t from-[rgb(8_10_14/0.88)] via-[rgb(8_10_14/0.45)] to-transparent" />
 
@@ -100,7 +97,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
         style={{ y: textY, opacity: fade }}
         className="relative mx-auto flex w-full max-w-7xl flex-col justify-end px-4 pb-10 pt-24 sm:px-6 sm:pb-14 lg:px-8"
       >
-        <h1 className="font-display font-black tracking-[-0.03em] text-[color:var(--t-fg)] leading-[0.95] text-[clamp(2.5rem,6.8vw,7.2rem)]">
+        <h1 className="font-display font-black tracking-[-0.03em] text-[color:var(--t-fg)] leading-[0.95] text-[clamp(1.9rem,4.4vw,4.4rem)]">
           <span className="block">
             <MaskText now text="Engineered for the Ghats." delay={0.15} stagger={0.08} />
           </span>

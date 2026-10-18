@@ -22,7 +22,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
     name: '',
     phone: '',
     vehicleModel: '',
-    serviceRequested: preselectedService || 'General 4x4 Mechanical Inspection',
+    serviceRequested: preselectedService || 'General Servicing, Inspection & Tuning',
     clientEstateLocation: '',
     notes: '',
   });
@@ -33,7 +33,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
   // Pick up the service chosen on the page each time the form opens.
   useEffect(() => {
     if (isOpen) {
-      setFormData((f) => ({ ...f, serviceRequested: preselectedService || 'General 4x4 Mechanical Inspection' }));
+      setFormData((f) => ({ ...f, serviceRequested: preselectedService || 'General Servicing, Inspection & Tuning' }));
     }
   }, [isOpen, preselectedService]);
 

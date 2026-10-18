@@ -40,7 +40,6 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdminPortal }) => {
               {WORKSHOP_INFO.contact.phoneFormatted}
             </a>
             <p>{WORKSHOP_INFO.contact.hours}</p>
-            <p>{WORKSHOP_INFO.contact.emergencyHours}</p>
           </div>
         </div>
       </div>

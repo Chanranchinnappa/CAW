@@ -52,10 +52,6 @@ export const WorkshopLocation: React.FC<WorkshopLocationProps> = ({ onOpenBookin
                 <dt className="text-[color:var(--t-muted)]">Open</dt>
                 <dd className="text-[color:var(--t-fg)]">{contact.hours}</dd>
               </div>
-              <div className="flex flex-wrap justify-between gap-x-6">
-                <dt className="text-[color:var(--t-muted)]">Emergencies</dt>
-                <dd className="text-[color:var(--t-accent2)]">{contact.emergencyHours}</dd>
-              </div>
             </dl>
 
             <div className="mt-8 flex flex-wrap gap-3">

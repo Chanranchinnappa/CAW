@@ -14,18 +14,18 @@ interface ServicesSectionProps {
 
 const SERVICES = [
   {
-    title: 'Jeep 4x4 ground-up restoration',
-    option: 'Jeep 4x4 Ground-Up Restoration',
-    tagline: 'Stripped, repaired and rebuilt from the chassis up.',
+    title: 'Vehicle restoration and rebuilds',
+    option: 'Vehicle Restoration & Rebuild',
+    tagline: 'Jeeps, Gypsys, utility pickups and cars.',
     description:
-      'We take a tired jeep down to the chassis and rebuild it: engine, gearbox, axles, suspension, wiring, body and paint, so it is ready for another few decades of estate work.',
+      'Restoration and rebuild work on jeeps, Gypsys, utility pickups and cars, from repairs to a complete rebuild. We agree the scope with you first.',
   },
   {
-    title: 'Car mechanical services',
-    option: 'Car Mechanical Services',
-    tagline: 'Servicing and repairs for everyday cars.',
+    title: 'Car mechanical and annual general services',
+    option: 'General Servicing, Inspection & Tuning',
+    tagline: 'Servicing, repairs and yearly check-ups.',
     description:
-      'Servicing, diagnosis and mechanical repairs for cars, from routine maintenance to engine, clutch, brake and suspension work.',
+      'Servicing, diagnosis and mechanical repairs for cars, plus annual general services to keep your vehicle running reliably.',
   },
   {
     title: 'Irrigation engines and pumps',
@@ -72,16 +72,16 @@ const SERVICES = [
   {
     title: 'Complete engine rebuilding',
     option: 'Engine Overhaul & Rebuild',
-    tagline: 'Full restoration and tuning for mountain roads and hill climbs.',
+    tagline: 'Diesel and petrol engines, repaired or rebuilt.',
     description:
-      'We dismantle, repair, and rebuild diesel and petrol engines, tuning them for reliable power and better cooling so your vehicle climbs steep estate tracks without overheating.',
+      'We dismantle, inspect, repair and rebuild diesel and petrol engines, replacing worn parts as needed, then test the engine before it goes back to you.',
   },
   {
-    title: '4x4 gearbox, transfer case and axles',
-    option: 'Differential Re-Gearing & Locking Hubs',
-    tagline: 'Reliable four-wheel drive and water protection.',
+    title: 'Gearbox, transfer case and axles',
+    option: 'Gearbox, Transfer Case & Axle Servicing',
+    tagline: 'Full servicing of the drivetrain.',
     description:
-      'Full servicing of 4WD gearboxes, transfer cases, and front and rear axles. We install differential locks for tough mud trails and seal all joints for deep monsoon water crossings.',
+      'Full servicing of gearboxes, transfer cases, and front and rear axles.',
   },
   {
     title: 'Custom steel bumpers and safety bars',
@@ -106,7 +106,7 @@ const SERVICES = [
   },
   {
     title: 'Estate breakdown and towing',
-    option: 'General 4x4 Mechanical Inspection',
+    option: 'General Servicing, Inspection & Tuning',
     tagline: 'On-call roadside and trail help across South Kodagu.',
     description:
       'Quick response if your vehicle is stuck in deep mud or broken down inside a coffee plantation. We bring recovery winches and tools to your location.',

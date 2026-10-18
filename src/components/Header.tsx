@@ -19,7 +19,6 @@ const NAV = [
   { id: 'services', label: 'Services' },
   { id: 'showcase', label: 'Builds' },
   { id: 'pipeline', label: 'On the lifts' },
-  { id: 'configurator-studio', label: 'Build your 4x4' },
   { id: 'workshop-facility', label: 'Visit' },
 ];
 
@@ -65,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-6">
           <a href="#" className={`shrink-0 whitespace-nowrap font-display text-lg font-extrabold tracking-tight text-[color:var(--t-fg)] rounded ${ring}`}>
-            <span className="text-[color:var(--t-accent)]">CAW</span> Coorg Auto Works
+            <img src="/logo.png" alt="Coorg Auto Works" width="800" height="329" className="h-11 w-auto" />
           </a>
 
           <nav aria-label="Primary" className="hidden items-center gap-1 text-sm font-medium md:flex">

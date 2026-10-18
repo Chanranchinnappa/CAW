@@ -16,3 +16,6 @@ PENDING.md
 
 # Public staff API address is not a secret and is read at build time
 !.env.production
+
+# Questionnaire stays on this computer only
+internal/

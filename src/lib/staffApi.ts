@@ -5,7 +5,6 @@
 
 import { STAFF_API_URL } from '../config';
 import { MediaManifest } from './media';
-import { deriveLoginKey } from '../../worker/loginKey.js';
 
 const TOKEN_KEY = 'caw_staff_token';
 
@@ -64,10 +63,8 @@ const jsonInit = (method: string, data: unknown): RequestInit => ({
   body: JSON.stringify(data),
 });
 
-export const login = async (username: string, password: string): Promise<string> => {
-  // The slow password stretching happens here in the browser; the server only checks the result.
-  const key = await deriveLoginKey(username, password);
-  const r = await call<{ token: string; user: string }>('/api/login', jsonInit('POST', { username, key }));
+export const login = async (password: string): Promise<string> => {
+  const r = await call<{ token: string; user: string }>('/api/login', jsonInit('POST', { password }));
   setToken(r.token);
   return r.user;
 };

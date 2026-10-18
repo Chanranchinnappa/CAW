@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "worker:test": "node worker/test.mjs",
     "worker:demo": "node worker/demo-server.mjs",
-    "worker:deploy": "cd worker && npx wrangler deploy"
+    "worker:deploy": "cd worker && npx wrangler deploy",
+    "worker:setup": "node worker/setup.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { handleRequest, signToken, sniff } from './core.js';
-import { deriveLoginKey, storedVerifier } from './loginKey.js';
 import { makeGithub } from './mock-github.mjs';
 
 const gh = makeGithub();
@@ -10,10 +9,7 @@ const env = {
   GITHUB_REPO: 'o/r', GITHUB_BRANCH: 'main', GITHUB_TOKEN: 't',
   SESSION_SECRET: 'x'.repeat(40),
   ALLOWED_ORIGINS: 'https://site.example,http://localhost:3000',
-  STAFF_USERS: JSON.stringify({
-    owner: await storedVerifier(await deriveLoginKey('owner', 'demo-only-password', 1000)),
-    mechanic: await storedVerifier(await deriveLoginKey('mechanic', 'another-pass', 1000)),
-  }),
+  STAFF_PASSWORD: 'demo-only-password',
 };
 const call = (method, path, { body, token, raw, origin = 'https://site.example', ip = '1.1.1.1' } = {}) =>
   handleRequest(new Request('https://api.test' + path, {
@@ -37,28 +33,26 @@ assert.equal((await call('OPTIONS', '/api/login', { origin: 'https://evil.exampl
 assert.equal((await handleRequest(new Request('https://api.test/api/login'), {})).status, 503); ok('503 when not configured');
 
 // login
-let r = await J(await call('POST', '/api/login', { body: { username: 'owner', key: await deriveLoginKey('owner', 'wrong', 1000) } }));
+let r = await J(await call('POST', '/api/login', { body: { password: 'wrong' } }));
 assert.equal(r.status, 401); ok('wrong password rejected');
-r = await J(await call('POST', '/api/login', { body: { username: 'nobody', key: await deriveLoginKey('nobody', 'demo-only-password', 1000) } }));
-assert.equal(r.status, 401); ok('unknown user rejected');
-r = await J(await call('POST', '/api/login', { body: { username: '__proto__', key: 'x' } }));
-assert.equal(r.status, 401); ok('prototype-name username rejected');
-r = await J(await call('POST', '/api/login', { body: { username: ' Owner ', key: await deriveLoginKey(' Owner ', 'demo-only-password', 1000) } }));
-assert.equal(r.status, 200); const token = r.body.token; assert.ok(token); ok('login works, username is case/space tolerant');
-r = await J(await call('POST', '/api/login', { body: { username: 'mechanic', key: await deriveLoginKey('mechanic', 'another-pass', 1000) } }));
-assert.equal(r.status, 200); ok('second staff account works');
+r = await J(await call('POST', '/api/login', { body: {} }));
+assert.equal(r.status, 401); ok('missing password rejected');
+r = await J(await call('POST', '/api/login', { body: { password: { $ne: 1 } } }));
+assert.equal(r.status, 401); ok('non-string password rejected');
+r = await J(await call('POST', '/api/login', { body: { password: 'demo-only-password' } }));
+assert.equal(r.status, 200); const token = r.body.token; assert.ok(token); ok('right password logs in');
 
 // throttle
-for (let i = 0; i < 5; i++) await call('POST', '/api/login', { body: { username: 'owner', key: 'bad' }, ip: '9.9.9.9' });
-r = await J(await call('POST', '/api/login', { body: { username: 'owner', key: await deriveLoginKey('owner', 'demo-only-password', 1000) }, ip: '9.9.9.9' }));
+for (let i = 0; i < 5; i++) await call('POST', '/api/login', { body: { password: 'bad' }, ip: '9.9.9.9' });
+r = await J(await call('POST', '/api/login', { body: { password: 'demo-only-password' }, ip: '9.9.9.9' }));
 assert.equal(r.status, 429); ok('5 failures block that IP, even with the right password');
 
 // auth required
 assert.equal((await call('GET', '/api/manifest')).status, 401); ok('no token -> 401');
 assert.equal((await call('GET', '/api/manifest', { token: token.slice(0, -3) + 'abc' })).status, 401); ok('tampered token -> 401');
-const expired = await (async () => { const real = Date.now; Date.now = () => real() - 13 * 3600 * 1000; const tk = await signToken(env.SESSION_SECRET, 'owner'); Date.now = real; return tk; })();
+const expired = await (async () => { const real = Date.now; Date.now = () => real() - 13 * 3600 * 1000; const tk = await signToken(env.SESSION_SECRET, 'staff'); Date.now = real; return tk; })();
 assert.equal((await call('GET', '/api/session', { token: expired })).status, 401); ok('expired token -> 401');
-assert.equal((await J(await call('GET', '/api/session', { token }))).body.user, 'owner'); ok('session returns user');
+assert.equal((await J(await call('GET', '/api/session', { token }))).body.user, 'staff'); ok('session returns user');
 
 // builds
 r = await J(await call('POST', '/api/builds', { token, body: { title: 'x' } }));
@@ -72,7 +66,7 @@ assert.equal(r.body.manifest.builds.length, 1); assert.equal(r.body.manifest.bui
 // upload
 r = await J(await call('PUT', `/api/media?buildId=${id}&caption=Front%20bumper`, { token, raw: JPEG }));
 assert.equal(r.status, 200); assert.match(r.body.media.path, new RegExp(`^media/${id}/[a-z0-9]+-[a-z0-9]{5}\\.jpg$`));
-assert.equal(r.body.media.by, 'owner'); assert.equal(r.body.media.caption, 'Front bumper');
+assert.equal(r.body.media.by, 'staff'); assert.equal(r.body.media.caption, 'Front bumper');
 assert.ok(gh.files.has(r.body.media.path)); const firstPath = r.body.media.path; ok('photo uploaded and indexed');
 r = await J(await call('PUT', `/api/media?buildId=${id}`, { token, raw: MP4 }));
 assert.equal(r.status, 200); assert.equal(r.body.media.type, 'video'); ok('video uploaded');

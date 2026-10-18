@@ -191,7 +191,7 @@ export const handleRequest = async (request, env) => {
   const route = url.pathname.replace(/\/+$/, '');
   const ip = request.headers.get('CF-Connecting-IP') || 'local';
 
-  if (!env.SESSION_SECRET || !env.STAFF_USERS || !env.GITHUB_TOKEN || !env.GITHUB_REPO) {
+  if (!env.SESSION_SECRET || !env.STAFF_USERS) {
     return json({ error: 'The staff API is not configured yet.' }, 503, cors);
   }
 
@@ -221,6 +221,11 @@ export const handleRequest = async (request, env) => {
 
     if (route === '/api/session' && request.method === 'GET') {
       return json({ user: session.u }, 200, cors);
+    }
+
+    // Login works without photo storage. Everything below needs it.
+    if (!env.GITHUB_TOKEN || !env.GITHUB_REPO) {
+      return json({ error: 'Photo and video storage is not set up yet.' }, 503, cors);
     }
 
     if (route === '/api/manifest' && request.method === 'GET') {

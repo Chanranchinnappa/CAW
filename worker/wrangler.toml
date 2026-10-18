@@ -7,9 +7,9 @@ compatibility_date = "2025-01-01"
 GITHUB_REPO = "Chanranchinnappa/CAW-media"
 GITHUB_BRANCH = "main"
 # The website addresses that may call this API. Add your real site address after you deploy it.
-ALLOWED_ORIGINS = "http://localhost:3000"
+ALLOWED_ORIGINS = "https://caw.charanchinnappa1929.workers.dev,http://localhost:3000"
 
 # Secrets are NOT stored here. Set them with:
-#   npx wrangler secret put STAFF_USERS
+#   npx wrangler secret put STAFF_PASSWORD
 #   npx wrangler secret put SESSION_SECRET
 #   npx wrangler secret put GITHUB_TOKEN

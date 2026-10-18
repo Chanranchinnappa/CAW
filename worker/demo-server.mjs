@@ -1,8 +1,7 @@
 // Local demo: runs the staff API against an in-memory fake GitHub, and serves the "published" files.
-// Usage: node worker/demo-server.mjs   (login: owner / demo-only-password)
+// Usage: node worker/demo-server.mjs   (password: demo-only-password)
 import http from 'node:http';
 import { handleRequest } from './core.js';
-import { deriveLoginKey, storedVerifier } from './loginKey.js';
 import { makeGithub } from './mock-github.mjs';
 
 const gh = makeGithub();
@@ -12,7 +11,7 @@ const env = {
   GITHUB_REPO: 'demo/CAW-media', GITHUB_BRANCH: 'main', GITHUB_TOKEN: 'demo',
   SESSION_SECRET: 'demo-secret-demo-secret-demo-secret-1234',
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://127.0.0.1:4173',
-  STAFF_USERS: JSON.stringify({ owner: await storedVerifier(await deriveLoginKey('owner', 'demo-only-password')) }),
+  STAFF_PASSWORD: 'demo-only-password',
 };
 const mime = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', mp4: 'video/mp4', webm: 'video/webm', json: 'application/json' };
 

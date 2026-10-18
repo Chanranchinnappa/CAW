@@ -13,3 +13,6 @@ coverage/
 
 # Private notes
 PENDING.md
+
+# Public staff API address is not a secret and is read at build time
+!.env.production

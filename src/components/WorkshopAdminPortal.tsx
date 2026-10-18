@@ -51,7 +51,6 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
 }) => {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!getToken());
-  const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginBusy, setLoginBusy] = useState(false);
@@ -138,7 +137,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
     setLoginBusy(true);
     setLoginError('');
     try {
-      await login(usernameInput, passwordInput);
+      await login(passwordInput);
       setIsAuthenticated(true);
       setPasswordInput('');
       try {
@@ -314,7 +313,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
               Workshop Staff Authorization
             </h4>
             <p className="mt-2 text-xs sm:text-sm text-[color:var(--t-muted)] leading-relaxed">
-              Sign in with your staff username and password to update bays, add photos and videos of finished builds, and open the staff questionnaire.
+              Enter the staff password to update bays, add photos and videos of finished builds, and open the staff questionnaire.
             </p>
 
             {!staffApiConfigured() && (
@@ -330,27 +329,13 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
 
             <form onSubmit={handleLogin} className="mt-6 w-full space-y-3 text-left">
               <div>
-                <label htmlFor="staff-user" className="block text-xs font-medium text-[color:var(--t-muted)] mb-1">Username</label>
-                <input
-                  id="staff-user"
-                  type="text"
-                  required
-                  autoFocus
-                  autoComplete="username"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  value={usernameInput}
-                  onChange={(e) => setUsernameInput(e.target.value)}
-                  className="w-full px-4 py-3 text-sm bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] rounded-xl text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"
-                />
-              </div>
-              <div>
-                <label htmlFor="staff-pass" className="block text-xs font-medium text-[color:var(--t-muted)] mb-1">Password</label>
+                <label htmlFor="staff-pass" className="block text-xs font-medium text-[color:var(--t-muted)] mb-1">Staff password</label>
                 <input
                   id="staff-pass"
                   type="password"
                   required
                   autoComplete="current-password"
+                  autoFocus
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   className="w-full px-4 py-3 text-sm bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] rounded-xl text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"

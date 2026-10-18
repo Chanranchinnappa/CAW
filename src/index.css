@@ -38,3 +38,29 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3b4252;
 }
+
+/* ---------- Configurator theme tokens (dark default, light on request) ---------- */
+.cfg-root,
+.cfg-root[data-cfg-theme="dark"] {
+  --cfg-bg: #0e121a; --cfg-panel: #121620; --cfg-panel2: #141822;
+  --cfg-card: rgb(23 23 23 / 0.6); --cfg-cardsel: rgb(38 38 38 / 0.9);
+  --cfg-raised: #262626; --cfg-raisedhover: #404040;
+  --cfg-fg: #ffffff; --cfg-fg2: #d4d4d4; --cfg-muted: #a3a3a3; --cfg-dim: #737373;
+  --cfg-accent: #f59e0b; --cfg-accent2: #fbbf24;
+  --cfg-border: #262626; --cfg-borderstrong: #404040;
+  --cfg-good: #34d399; --cfg-goodbg: #022c22; --cfg-goodborder: #065f46;
+  --cfg-warnbg: rgb(69 26 3 / 0.25); --cfg-warnborder: rgb(180 83 9 / 0.5); --cfg-warnfg: #fef3c7;
+  color-scheme: dark;
+}
+.cfg-root[data-cfg-theme="light"] {
+  --cfg-bg: #f3efe6; --cfg-panel: #ffffff; --cfg-panel2: #faf7f0;
+  --cfg-card: #f6f2e8; --cfg-cardsel: #fff6e0;
+  --cfg-raised: #ebe5d6; --cfg-raisedhover: #ddd5c0;
+  --cfg-fg: #1b1f27; --cfg-fg2: #343a46; --cfg-muted: #566070; --cfg-dim: #6b7383;
+  --cfg-accent: #b45309; --cfg-accent2: #92400e;
+  --cfg-border: #ddd5c2; --cfg-borderstrong: #c4b99d;
+  --cfg-good: #047857; --cfg-goodbg: #d1fae5; --cfg-goodborder: #6ee7b7;
+  --cfg-warnbg: #fff4dc; --cfg-warnborder: #e0a63a; --cfg-warnfg: #5b3a05;
+  color-scheme: light;
+}
+.cfg-root { transition: background-color .25s ease; }

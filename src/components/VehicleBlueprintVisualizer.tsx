@@ -60,36 +60,36 @@ export const VehicleBlueprintVisualizer: React.FC<VisualizerProps> = ({
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
       {/* Studio Header Mode Switcher (3D Chassis Model vs Reference Photos) */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-2 text-xs font-mono-num text-neutral-400">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-2">
+        <div className="flex items-center gap-2 text-xs font-mono-num text-[color:var(--cfg-muted)]">
           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-          <span className="text-white font-semibold uppercase">{platform.name}</span>
-          <span className="text-neutral-600">·</span>
-          <span className="text-amber-400">{paint.name}</span>
+          <span className="text-[color:var(--cfg-fg)] font-semibold uppercase">{platform.name}</span>
+          <span className="text-[color:var(--cfg-dim)]">·</span>
+          <span className="text-[color:var(--cfg-accent2)]">{paint.name}</span>
         </div>
 
-        <div className="flex items-center gap-1 bg-black/60 p-1 rounded-xl border border-neutral-800">
+        <div className="flex items-center gap-1 bg-[color:var(--cfg-card)] p-1 rounded-xl border border-[color:var(--cfg-border)]">
           <button
             onClick={() => setVisualizerMode('3d-chassis')}
             className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
               visualizerMode === '3d-chassis'
                 ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
-                : 'text-neutral-400 hover:text-white'
+                : 'text-[color:var(--cfg-muted)] hover:text-[color:var(--cfg-fg)]'
             }`}
           >
             <Box className="w-3.5 h-3.5" />
-            <span>3D Perspective &amp; Chassis</span>
+            <span><span className="sm:hidden">3D View</span><span className="hidden sm:inline">3D Perspective &amp; Chassis</span></span>
           </button>
           <button
             onClick={() => setVisualizerMode('photo-gallery')}
             className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
               visualizerMode === 'photo-gallery'
                 ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
-                : 'text-neutral-400 hover:text-white'
+                : 'text-[color:var(--cfg-muted)] hover:text-[color:var(--cfg-fg)]'
             }`}
           >
             <ImageIcon className="w-3.5 h-3.5" />
-            <span>Reference Photos</span>
+            <span><span className="sm:hidden">Photos</span><span className="hidden sm:inline">Reference Photos</span></span>
           </button>
         </div>
       </div>
@@ -144,7 +144,7 @@ export const VehicleBlueprintVisualizer: React.FC<VisualizerProps> = ({
                   {platform.name} · {angleLabels[activePhotoAngle]}
                 </h4>
                 <p className="mt-1 text-xs text-neutral-400 max-w-md">
-                  Waiting for actual workshop photos from Coorg Auto Works. Upload your real build pictures to feature here.
+                  Reference photo unavailable right now. Try the 3D view, or send us photos of your vehicle.
                 </p>
               </div>
             )}
@@ -160,7 +160,7 @@ export const VehicleBlueprintVisualizer: React.FC<VisualizerProps> = ({
             {/* Submit Photos Banner */}
             <div className="absolute bottom-4 left-4 right-4 z-10">
               <a
-                href={`https://wa.me/${WORKSHOP_INFO.contact.whatsapp}?text=Hello%20Coorg%20Auto%20Works!%20I%20have%20actual%20high-res%20photos%20of%20our%20MM540%20/%20workshop%20builds%20to%20update%20the%20website%20configurator.`}
+                href={`https://wa.me/${WORKSHOP_INFO.contact.whatsapp}?text=Hello%20Coorg%20Auto%20Works!%20I%20would%20like%20to%20share%20photos%20of%20my%20vehicle%20for%20a%20custom%20build%20reference.`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-xl bg-[#121622]/95 border border-amber-500/40 hover:border-amber-500 backdrop-blur-md transition-all shadow-xl"
@@ -168,14 +168,14 @@ export const VehicleBlueprintVisualizer: React.FC<VisualizerProps> = ({
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Upload className="w-4 h-4 text-amber-500 shrink-0" />
                   <div className="text-xs truncate">
-                    <span className="text-white font-semibold">Updating with Real MM540 Photos:</span>{' '}
+                    <span className="text-white font-semibold">Illustrative reference photos.</span>{' '}
                     <span className="text-neutral-400 hidden sm:inline">
-                      Click here to share actual high-res photos of your builds directly via WhatsApp.
+                      Send photos of your own vehicle on WhatsApp for a tailored reference.
                     </span>
                   </div>
                 </div>
                 <span className="text-[11px] font-semibold text-amber-400 group-hover:text-amber-300 whitespace-nowrap shrink-0 flex items-center gap-1">
-                  <span>Submit Photos</span>
+                  <span>Send Photos</span>
                   <Send className="w-3 h-3" />
                 </span>
               </a>

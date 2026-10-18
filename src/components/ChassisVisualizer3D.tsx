@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ConfiguratorState } from '../types';
 import {
   VEHICLE_PLATFORMS,
@@ -45,6 +45,18 @@ export const ChassisVisualizer3D: React.FC<ChassisVisualizer3DProps> = ({
   const [pitchAngle, setPitchAngle] = useState<number>(22); // Vertical tilt in degrees
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [showDimensions, setShowDimensions] = useState<boolean>(true);
+  // Fit the fixed-size 3D model into narrow containers (phones)
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState<number>(1);
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([entry]) => {
+      setFit(Math.max(0.45, Math.min(1, entry.contentRect.width / 620)));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const platform =
     VEHICLE_PLATFORMS.find((p) => p.id === config.platformId) || VEHICLE_PLATFORMS[0];
@@ -71,8 +83,8 @@ export const ChassisVisualizer3D: React.FC<ChassisVisualizer3DProps> = ({
   // Computed 3D Transform based on selected view mode
   const currentTransform =
     viewMode === 'isometric'
-      ? `perspective(1200px) rotateX(${pitchAngle}deg) rotateY(${yawAngle}deg) scale3d(${zoomLevel}, ${zoomLevel}, ${zoomLevel})`
-      : `perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(${zoomLevel}, ${zoomLevel}, ${zoomLevel})`;
+      ? `perspective(1200px) rotateX(${pitchAngle}deg) rotateY(${yawAngle}deg) scale3d(${zoomLevel * fit}, ${zoomLevel * fit}, ${zoomLevel * fit})`
+      : `perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(${zoomLevel * fit}, ${zoomLevel * fit}, ${zoomLevel * fit})`;
 
   // Preset camera angle switches
   const handleSetPreset = (pitch: number, yaw: number) => {
@@ -177,7 +189,7 @@ export const ChassisVisualizer3D: React.FC<ChassisVisualizer3DProps> = ({
       </div>
 
       {/* Main 3D Stage Canvas */}
-      <div className="relative flex-1 w-full h-full flex items-center justify-center overflow-hidden [perspective:1200px]">
+      <div ref={stageRef} className="relative flex-1 w-full h-full flex items-center justify-center overflow-hidden [perspective:1200px]">
         {/* Background Grid & Studio Ambient Lighting */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#182030]/40 via-[#0a0d14] to-[#05070a] pointer-events-none" />
 

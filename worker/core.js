@@ -1,12 +1,10 @@
 /**
- * CAW staff API: login for two staff accounts, and photo/video uploads that are
+ * CAW staff API: one shared staff password, and photo/video uploads that are
  * committed to a public GitHub Pages repo. Runs on a Cloudflare Worker (free plan).
  *
- * Secrets:  STAFF_USERS (JSON of username -> password hash), SESSION_SECRET, GITHUB_TOKEN
+ * Secrets:  STAFF_PASSWORD (the one staff password), SESSION_SECRET, GITHUB_TOKEN (only for photo storage)
  * Vars:     GITHUB_REPO ("owner/repo"), GITHUB_BRANCH, ALLOWED_ORIGINS (comma separated)
  */
-
-import { storedVerifier } from './loginKey.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -41,10 +39,9 @@ const safeEqual = (a, b) => {
 };
 
 /* ---------------- passwords & sessions ---------------- */
-const verifyLogin = async (loginKey, stored) => {
-  const got = enc.encode(await storedVerifier(String(loginKey ?? '')));
-  return safeEqual(got, enc.encode(String(stored || '')));
-};
+const sha256 = async (text) => new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(String(text ?? ''))));
+/** Compares digests, so the check takes the same time wherever a wrong guess differs. */
+const verifyPassword = async (given, expected) => safeEqual(await sha256(given), await sha256(expected));
 
 const hmacKey = (secret, usage) =>
   crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, usage);
@@ -191,7 +188,7 @@ export const handleRequest = async (request, env) => {
   const route = url.pathname.replace(/\/+$/, '');
   const ip = request.headers.get('CF-Connecting-IP') || 'local';
 
-  if (!env.SESSION_SECRET || !env.STAFF_USERS) {
+  if (!env.SESSION_SECRET || !env.STAFF_PASSWORD) {
     return json({ error: 'The staff API is not configured yet.' }, 503, cors);
   }
 
@@ -200,18 +197,14 @@ export const handleRequest = async (request, env) => {
     if (route === '/api/login' && request.method === 'POST') {
       if (blocked(ip)) return json({ error: 'Too many wrong attempts. Try again in 15 minutes.' }, 429, cors);
       let body;
-      try { body = await request.json(); } catch { return json({ error: 'Send username and key.' }, 400, cors); }
-      const username = clean(body.username, 40).toLowerCase();
-      const users = JSON.parse(env.STAFF_USERS);
-      const stored = Object.prototype.hasOwnProperty.call(users, username) ? users[username] : null;
-      // Always do one comparison so a wrong username takes as long as a wrong password
-      const ok = await verifyLogin(body.key, stored || 'no-such-user');
-      if (!stored || !ok) {
+      try { body = await request.json(); } catch { return json({ error: 'Send the password.' }, 400, cors); }
+      const given = typeof body.password === 'string' ? body.password.slice(0, 200) : '';
+      if (!given || !(await verifyPassword(given, env.STAFF_PASSWORD))) {
         noteFailure(ip);
-        return json({ error: 'Wrong username or password.' }, 401, cors);
+        return json({ error: 'Wrong password.' }, 401, cors);
       }
       failures.delete(ip);
-      return json({ token: await signToken(env.SESSION_SECRET, username), user: username }, 200, cors);
+      return json({ token: await signToken(env.SESSION_SECRET, 'staff'), user: 'staff' }, 200, cors);
     }
 
     /* ----- everything below needs a valid session ----- */

@@ -36,7 +36,8 @@ export interface VehicleSpec {
 
 export const SPECS: Record<VehiclePlatformId, VehicleSpec> = {
   mm540: {
-    kind: 'jeep', length: 3.7, width: 1.68, wheelbase: 2.03, track: 1.4, baseClear: 0.56, stockTyreR: 0.37,
+    // Length, width, wheelbase and track are from the factory MM 540 DP brochure.
+    kind: 'jeep', length: 3.81, width: 1.65, wheelbase: 2.43, track: 1.29, baseClear: 0.56, stockTyreR: 0.37,
     beltH: 0.55, hoodH: 0.8, cowlX: 0.72, roofH: 1.3, screenRake: 0.16, cabinRearX: -1.78,
     hoodRound: 0.05, grille: 'slots', headlamp: 'round', spare: 'rear', rearSeat: true, fenderWidth: 0.4,
   },

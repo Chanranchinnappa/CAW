@@ -17,6 +17,24 @@ import {
   WorkshopPhoto,
 } from '../types';
 
+/** Choices in the booking form. The value is what the service list sends when someone taps "Discuss this job". */
+export const SERVICE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'Jeep 4x4 Ground-Up Restoration', label: 'Jeep 4x4 Ground-Up Restoration' },
+  { value: 'Car Mechanical Services', label: 'Car Mechanical Services' },
+  { value: 'Irrigation Engine & Pump Building', label: 'Irrigation Self-Priming Engine & Pump Building' },
+  { value: 'Underground HDPE Irrigation', label: 'Underground HDPE Irrigation Services' },
+  { value: 'Diesel Generator Build', label: 'Diesel Generator Build' },
+  { value: 'Sprinkler Jet Set-up & Fabrication', label: 'Sprinkler Jet Set-up & Fabrication' },
+  { value: 'Jeep Trailer Build', label: 'Jeep Trailer Build' },
+  { value: 'Jeep Alterations', label: 'Jeep Alterations (power steering, disc brakes, hydraulic clutch)' },
+  { value: 'General 4x4 Mechanical Inspection', label: 'General 4x4 Mechanical Inspection & Tuning' },
+  { value: 'Engine Overhaul & Rebuild', label: 'Engine Overhaul & Rebuild' },
+  { value: 'Front Shackle Reversal & Suspension Lift', label: 'Front Shackle Reversal & Suspension Lift' },
+  { value: 'Differential Re-Gearing & Locking Hubs', label: 'Differential Re-Gearing & Locking Hubs' },
+  { value: 'Custom Bumper, Winch & Roll Cage Fabrication', label: 'Custom Bumper, Winch & Roll Cage Fabrication' },
+  { value: 'Complete Monsoon Rust Treatment & Respray', label: 'Complete Monsoon Rust Treatment & Respray' },
+];
+
 export const WORKSHOP_INFO = {
   name: 'Coorg Auto Works',
   shortName: 'CAW',
@@ -33,15 +51,15 @@ export const WORKSHOP_INFO = {
     googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Coorg+Auto+Works+Matturu+Ponnampet+Kodagu',
   },
   contact: {
-    phonePrimary: '+91 94802 78310',
-    phoneFormatted: '+91 94802 78310',
-    whatsapp: '919480278310',
+    phonePrimary: '+91 99457 42410',
+    phoneFormatted: '+91 99457 42410',
+    whatsapp: '919945742410',
     email: 'builds@coorgautoworks.in',
     hours: 'Mon – Sat: 8:30 AM – 7:30 PM',
     emergencyHours: '24/7 Estate Recovery & Winching Assistance',
   },
   stats: [
-    { label: 'Estate 4x4 Heritage', value: '20+ Years' },
+    { label: 'Estate 4x4 Heritage', value: '30+ Years' },
     { label: 'Completed Rebuilds', value: '450+' },
     { label: 'Monsoon Cavity Sealing', value: '100% Zinc-Treated' },
     { label: 'Workshop', value: '4-Bay Facility' },
@@ -57,19 +75,19 @@ export const VEHICLE_PLATFORMS: VehiclePlatform[] = [
     name: 'Mahindra MM540 4x4',
     tagline: 'The Undisputed Western Ghats Workhorse',
     lineup: 'Mahindra',
-    baseHorsepower: '62 BHP (Peugeot XD3P) / 75 BHP (Di Turbo)',
-    transmission: 'KMT-90 4-Speed / NGT530 5-Speed + T-18 Transfer Case',
-    driveType: '4WD Manual Free Wheeling Hubs',
+    baseHorsepower: '62 BHP @ 4500 rpm (XDP 4.90 B, factory brochure)',
+    transmission: '4-speed manual, floor shift, with 2-speed transfer case (1:1 high, 2.46:1 low)',
+    driveType: '4WD with full-floating front axle',
     description:
-      'Engineered with a heavy ladder chassis, Dana 44 rear differential, and mechanical simplicity that conquers muddy coffee estate climbs where electronic modern SUVs falter.',
+      'Engineered with a heavy ladder chassis and mechanical simplicity that conquers muddy coffee estate climbs where electronic modern SUVs falter.',
     heritageStory:
       'The quintessential Coorg estate legend. From the torrential downpours of Kutta to the rocky hairpins of Brahmagiri, the MM540 remains the definitive mountain vehicle of Kodagu.',
     stockSpecs: {
-      engine: 'Peugeot XD3P 2.5L Diesel or Mahindra MDI 3200TC Di',
-      displacement: '2498 cc',
-      torque: '152.5 Nm @ 2000 rpm',
-      groundClearance: '210 mm',
-      axle: 'Full-floating rear Dana 44 with Spicer 4.27:1 crown pinion',
+      engine: 'Mahindra XDP 4.90 B diesel, 4-cylinder inline',
+      displacement: '2112 cc',
+      torque: '12.3 kgm (about 120 Nm) @ 2000 rpm',
+      groundClearance: '200 mm',
+      axle: 'Front full-floating hypoid, rear semi-floating hypoid, 4.88:1',
     },
     defaultOptions: {
       platformId: 'mm540',

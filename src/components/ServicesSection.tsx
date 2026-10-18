@@ -14,6 +14,62 @@ interface ServicesSectionProps {
 
 const SERVICES = [
   {
+    title: 'Jeep 4x4 ground-up restoration',
+    option: 'Jeep 4x4 Ground-Up Restoration',
+    tagline: 'Stripped, repaired and rebuilt from the chassis up.',
+    description:
+      'We take a tired jeep down to the chassis and rebuild it: engine, gearbox, axles, suspension, wiring, body and paint, so it is ready for another few decades of estate work.',
+  },
+  {
+    title: 'Car mechanical services',
+    option: 'Car Mechanical Services',
+    tagline: 'Servicing and repairs for everyday cars.',
+    description:
+      'Servicing, diagnosis and mechanical repairs for cars, from routine maintenance to engine, clutch, brake and suspension work.',
+  },
+  {
+    title: 'Irrigation engines and pumps',
+    option: 'Irrigation Engine & Pump Building',
+    tagline: 'Self-priming engine and pump sets built for the estate.',
+    description:
+      'We build all types of self-priming irrigation engine and pump sets, matched to your water source, head and the area you need to cover.',
+  },
+  {
+    title: 'Underground HDPE irrigation',
+    option: 'Underground HDPE Irrigation',
+    tagline: 'Pipe laying that stays out of the way and lasts.',
+    description:
+      'Underground HDPE pipeline work for irrigation, from the pump to the field, so water reaches your crop without exposed pipes in the way.',
+  },
+  {
+    title: 'Diesel generator builds',
+    option: 'Diesel Generator Build',
+    tagline: 'Generator sets assembled to suit your load.',
+    description:
+      'We build diesel generator sets for estates, workshops and farms, sized to the load you need to run.',
+  },
+  {
+    title: 'Sprinkler jet set-up and fabrication',
+    option: 'Sprinkler Jet Set-up & Fabrication',
+    tagline: 'Sprinkler stands and jets fabricated and fitted.',
+    description:
+      'Fabrication and set-up of sprinkler jets and their stands, planned around your field layout and pump.',
+  },
+  {
+    title: 'Jeep trailer builds',
+    option: 'Jeep Trailer Build',
+    tagline: 'Trailers built to be towed behind your jeep.',
+    description:
+      'Purpose-built trailers for jeeps, fabricated in our own metal shop for hauling on estate roads and tracks.',
+  },
+  {
+    title: 'Jeep alterations',
+    option: 'Jeep Alterations',
+    tagline: 'Power steering, disc brakes and hydraulic clutch.',
+    description:
+      'Upgrades that make an old jeep easier and safer to drive: power steering, disc brakes and a hydraulic power clutch, fitted and set up in the workshop.',
+  },
+  {
     title: 'Complete engine rebuilding',
     option: 'Engine Overhaul & Rebuild',
     tagline: 'Full restoration and tuning for mountain roads and hill climbs.',
@@ -65,7 +121,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHead
           title="What we fix and build"
-          intro="Every job is discussed in person or on call, so the work fits your vehicle. We don't publish fixed prices."
+          intro="We work on jeeps, Gypsys, utility pickups and cars. Every job is discussed in person or on call, so the work fits your vehicle. We don't publish fixed prices."
         />
 
         <ul className="border-t border-[color:var(--t-border)]">

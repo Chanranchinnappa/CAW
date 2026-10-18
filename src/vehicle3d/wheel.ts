@@ -47,6 +47,49 @@ export function buildWheel(dims: TyreDims, style: WheelStyle, mats: Mats): THREE
   tyreMat.bumpScale = dims.tread === 'bar' ? 2.2 : 3.2;
   mesh(lathe, tyreMat, g);
 
+  // ---- real tread blocks, so the silhouette is chunky and not just a painted texture ----
+  if (dims.tread !== 'bar') {
+    const mud = dims.tread === 'mud';
+    const n = mud ? 30 : 44;
+    const bw = dims.width * (mud ? 0.3 : 0.22);
+    const bh = mud ? 0.03 : 0.016;
+    const bt = ((Math.PI * 2 * R) / n) * (mud ? 0.5 : 0.58);
+    const block = new THREE.BoxGeometry(bt, bh, bw);
+    const rows = mud ? [-1, 0, 1] : [-1, 1];
+    const inst = new THREE.InstancedMesh(block, mats.tyre, n * rows.length);
+    inst.castShadow = true;
+    const o = new THREE.Object3D();
+    let k = 0;
+    for (const row of rows) {
+      for (let i = 0; i < n; i++) {
+        const a = ((i + (row === 0 ? 0.5 : 0)) / n) * Math.PI * 2;
+        const zc = row * dims.width * (mud ? 0.31 : 0.26);
+        o.position.set(Math.cos(a) * (R + bh / 2 - 0.004), Math.sin(a) * (R + bh / 2 - 0.004), zc);
+        o.rotation.set(0, 0, a + Math.PI / 2 - 0.0);
+        o.rotateY(row * (mud ? 0.28 : 0.12));
+        o.updateMatrix();
+        inst.setMatrixAt(k++, o.matrix);
+      }
+    }
+    g.add(inst);
+    // shoulder lugs wrap round the corner of the tyre
+    if (mud) {
+      const sh = new THREE.InstancedMesh(new THREE.BoxGeometry(bt * 0.9, 0.05, 0.022), mats.tyre, n * 2);
+      let j = 0;
+      for (const side of [-1, 1]) {
+        for (let i = 0; i < n; i++) {
+          const a = ((i + 0.25) / n) * Math.PI * 2;
+          const rr = R - 0.022;
+          o.position.set(Math.cos(a) * rr, Math.sin(a) * rr, side * hw * 0.9);
+          o.rotation.set(0, 0, a + Math.PI / 2);
+          o.updateMatrix();
+          sh.setMatrixAt(j++, o.matrix);
+        }
+      }
+      g.add(sh);
+    }
+  }
+
   // ---- rim barrel ----
   const barrel = cyl(rimR * 0.985, rimR * 0.985, hw * 1.5, 48);
   barrel.rotateX(Math.PI / 2);

@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { WORKSHOP_INFO } from '../data/cawData';
+import { WORKSHOP_INFO, SERVICE_OPTIONS } from '../data/cawData';
 import { X, Send, CheckCircle2, Phone, Calendar, Wrench } from 'lucide-react';
 
 interface InquiryModalProps {
@@ -22,7 +22,6 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
     name: '',
     phone: '',
     vehicleModel: '',
-    vehicleYear: '',
     serviceRequested: preselectedService || 'General 4x4 Mechanical Inspection',
     clientEstateLocation: '',
     notes: '',
@@ -51,7 +50,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
       return;
     }
     if (!formData.vehicleModel.trim()) {
-      setErrorMsg('Please specify your vehicle make/model (e.g., MM540, Bolero, Safari, Gypsy).');
+      setErrorMsg('Please specify your vehicle make/model (e.g., MM540, Gypsy, Bolero pickup, Maruti 800).');
       return;
     }
 
@@ -60,7 +59,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
   };
 
   const handleSendToWhatsApp = () => {
-    const text = `Hello Coorg Auto Works!%0A%0A*Service Consultation Request:*%0A*Name:* ${formData.name}%0A*Phone:* ${formData.phone}%0A*Vehicle:* ${formData.vehicleModel} (${formData.vehicleYear || 'N/A'})%0A*Service:* ${formData.serviceRequested}%0A*Location/Estate:* ${formData.clientEstateLocation || 'Coorg'}%0A*Requirements:* ${formData.notes || 'Full inspection'}`;
+    const text = `Hello Coorg Auto Works!%0A%0A*Service Consultation Request:*%0A*Name:* ${formData.name}%0A*Phone:* ${formData.phone}%0A*Vehicle:* ${formData.vehicleModel}%0A*Service:* ${formData.serviceRequested}%0A*Location/Estate:* ${formData.clientEstateLocation || 'Coorg'}%0A*Requirements:* ${formData.notes || 'Full inspection'}`;
 
     window.open(`https://wa.me/${WORKSHOP_INFO.contact.whatsapp}?text=${text}`, '_blank');
   };
@@ -78,14 +77,11 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
         {!submitted ? (
           <div>
             <div className="pr-8">
-              <div className="text-xs font-mono-num text-[color:var(--t-accent)] uppercase tracking-wider mb-1">
-                MATTURU WORKSHOP INTAKE
-              </div>
               <h3 className="text-xl font-bold text-[color:var(--t-fg)] font-display">
                 Book a Vehicle Service or Restomod Consultation
               </h3>
               <p className="mt-1 text-xs text-[color:var(--t-muted)]">
-                Direct consultation with master technician Charan Chinnappa.
+                Direct consultation with Ashraf M S.
               </p>
             </div>
 
@@ -105,7 +101,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Biddappa Muthappa"
+                  placeholder=""
                   className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
@@ -140,7 +136,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-[color:var(--t-fg2)] mb-1">
                     Vehicle Make &amp; Model *
@@ -154,18 +150,6 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                     className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-[color:var(--t-fg2)] mb-1">
-                    Manufacturing Year
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vehicleYear}
-                    onChange={(e) => setFormData({ ...formData, vehicleYear: e.target.value })}
-                    placeholder="e.g. 1996"
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors font-mono-num"
-                  />
-                </div>
               </div>
 
               <div>
@@ -177,38 +161,14 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, serviceRequested: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors"
                 >
-                  {![
-                    'General 4x4 Mechanical Inspection',
-                    'Engine Overhaul & Rebuild',
-                    'Front Shackle Reversal & Suspension Lift',
-                    'Differential Re-Gearing & Locking Hubs',
-                    'Custom Bumper, Winch & Roll Cage Fabrication',
-                    'Complete Monsoon Rust Treatment & Respray',
-                    'Full Restomod Ground-Up Project',
-                  ].includes(formData.serviceRequested) && (
+                  {!SERVICE_OPTIONS.some((o) => o.value === formData.serviceRequested) && (
                     <option value={formData.serviceRequested}>{formData.serviceRequested}</option>
                   )}
-                  <option value="General 4x4 Mechanical Inspection">
-                    General 4x4 Mechanical Inspection &amp; Tuning
-                  </option>
-                  <option value="Engine Overhaul & Rebuild">
-                    Engine Overhaul &amp; Rebuild (XD3P / Di / TCIC / Dicor / G13BB)
-                  </option>
-                  <option value="Front Shackle Reversal & Suspension Lift">
-                    Front Shackle Reversal &amp; Suspension Lift
-                  </option>
-                  <option value="Differential Re-Gearing & Locking Hubs">
-                    Differential Re-Gearing &amp; Locking Hubs
-                  </option>
-                  <option value="Custom Bumper, Winch & Roll Cage Fabrication">
-                    Custom Bumper, Winch &amp; Roll Cage Fabrication
-                  </option>
-                  <option value="Complete Monsoon Rust Treatment & Respray">
-                    Complete Monsoon Rust Treatment &amp; Respray
-                  </option>
-                  <option value="Full Restomod Ground-Up Project">
-                    Full Restomod Ground-Up Project
-                  </option>
+                  {SERVICE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -220,7 +180,7 @@ export const ServiceInquiryModal: React.FC<InquiryModalProps> = ({
                   rows={3}
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Mention any mechanical symptoms (e.g. gearbox noise, overheating during crawl, rusted floor pans)..."
+                  placeholder="Mention any mechanical symptoms (e.g., engine or gearbox noise, overheating, rusted floor pans, etc.)."
                   className="w-full px-3.5 py-2.5 rounded-lg bg-[color:var(--t-card)] border border-[color:var(--t-borderstrong)] text-xs sm:text-sm text-[color:var(--t-fg)] focus:outline-none focus:border-amber-500 transition-colors resize-none"
                 />
               </div>

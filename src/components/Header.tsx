@@ -65,8 +65,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking, onOpenAdminPortal
         <div className="flex h-16 items-center justify-between gap-3 sm:gap-6">
           <a href="#" className={`shrink-0 whitespace-nowrap font-display text-lg font-extrabold tracking-tight text-[color:var(--t-fg)] rounded ${ring}`}>
             <span className="flex items-center gap-2.5">
-              <img src="/logo-small.webp" alt="" width="360" height="148" className="h-9 w-auto sm:h-10" />
-              <span className="hidden min-[380px]:inline lg:hidden xl:inline text-sm sm:text-lg">Coorg Auto Works</span>
+              <span className="text-sm uppercase tracking-[0.08em] sm:text-lg">Coorg Auto Works</span>
             </span>
           </a>
 

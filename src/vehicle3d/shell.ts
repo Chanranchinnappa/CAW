@@ -136,8 +136,14 @@ export function buildJeepShell(c: Ctx): THREE.Group {
   const hoodW = W - 2 * fw + 0.04;
   add(g, rbox(hoodLen, 0.15, hoodW, spec.hoodRound), mats.paint, cowl + hoodLen / 2, hoodH - 0.075, 0);
   add(g, rbox(hoodLen - 0.04, hoodH - 0.2, W - 2 * fw + 0.02, 0.01), mats.underbody, cowl + hoodLen / 2, (hoodH - 0.2) / 2 + 0.03, 0);
-  // hood latch and centre ridge
-  add(g, rbox(hoodLen * 0.96, 0.02, 0.05, 0.01), mats.paint, cowl + hoodLen / 2, hoodH + 0.005, 0);
+  // hood: raised centre panel, two pressed ribs, hinges at the cowl and rubber catches at the nose
+  add(g, rbox(hoodLen * 0.9, 0.03, hoodW * 0.62, 0.014), mats.paint, cowl + hoodLen / 2 - 0.01, hoodH + 0.01, 0);
+  for (const s of [1, -1]) {
+    add(g, rbox(hoodLen * 0.84, 0.014, 0.022, 0.006), mats.paint, cowl + hoodLen / 2 - 0.01, hoodH + 0.03, s * hoodW * 0.2);
+    add(g, rbox(0.05, 0.03, 0.04, 0.008), mats.black, cowl + 0.03, hoodH + 0.005, s * hoodW * 0.34); // hinge
+    add(g, rbox(0.045, 0.045, 0.05, 0.012), mats.black, front - 0.13, hoodH - 0.12, s * (hoodW / 2 - 0.02)); // catch
+    add(g, new THREE.TorusGeometry(0.014, 0.004, 6, 12).rotateY(Math.PI / 2), mats.chrome, front - 0.103, hoodH - 0.12, s * (hoodW / 2 - 0.02));
+  }
 
   const x0 = axF - Math.sqrt(Math.max(0.01, ar * ar - wy0 * wy0)) - 0.03;
   const fPts: P2[] = [
@@ -153,8 +159,17 @@ export function buildJeepShell(c: Ctx): THREE.Group {
   for (const s of [1, -1]) {
     const z0 = s > 0 ? W / 2 - fw : -W / 2;
     add(g, panelGeometry(fenderShape, fw, z0, 0.012), mats.paint);
-    archTrim(g, axF, wy0, ar, s * (W / 2 + 0.002), mats.plastic);
-    archTrim(g, axF, wy0, ar, s * (W / 2 - fw - 0.002), mats.underbody, 0.012);
+    // rolled steel lip on the fender edge, in body paint like the factory panel
+    archTrim(g, axF, wy0, ar, s * (W / 2 - 0.004), mats.paint, 0.022);
+    archTrim(g, axF, wy0, ar, s * (W / 2 - fw + 0.006), mats.underbody, 0.012);
+    // crowned top of the fender: a half-round roll along the top edge and nose
+    const crownLen = front - 0.05 - cowl - 0.02;
+    const crown = add(g, new THREE.CylinderGeometry(0.03, 0.03, crownLen, 14).rotateZ(Math.PI / 2), mats.paint, cowl + 0.02 + crownLen / 2, hoodH - 0.04, s * (W / 2 - fw / 2));
+    crown.scale.set(1, 1, fw * 14);
+    add(g, new THREE.CylinderGeometry(0.03, 0.03, fw - 0.02, 12).rotateX(Math.PI / 2), mats.paint, front - 0.05, hoodH - 0.04, s * (W / 2 - fw / 2));
+    // fender-to-hood seam and the nose roll beside the headlamp
+    add(g, rbox(crownLen, 0.012, 0.012, 0.004), mats.black, cowl + 0.02 + crownLen / 2, hoodH - 0.03, s * (W / 2 - fw - 0.004));
+    add(g, new THREE.CylinderGeometry(0.022, 0.022, hoodH - 0.2, 10), mats.paint, front - 0.05, (hoodH - 0.2) / 2 + 0.08, s * (W / 2 - 0.01));
     // headlamp bucket
     const hz = s * (W / 2 - 0.2);
     const hy = hoodH - 0.22;
@@ -162,6 +177,9 @@ export function buildJeepShell(c: Ctx): THREE.Group {
     bucket.castShadow = false;
     add(g, new THREE.SphereGeometry(0.082, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2).rotateZ(-Math.PI / 2), mats.headlight, front + 0.035, hy, hz);
     add(g, new THREE.TorusGeometry(0.093, 0.011, 8, 28).rotateY(Math.PI / 2), mats.chrome, front + 0.052, hy, hz);
+    add(g, new THREE.TorusGeometry(0.11, 0.008, 8, 28).rotateY(Math.PI / 2), mats.paint, front + 0.012, hy, hz); // painted bezel behind the lamp
+    // lens stripes catch light like a pressed glass lens
+    for (const k of [-0.04, 0, 0.04]) add(g, rbox(0.006, 0.15, 0.004, 0.002), mats.chrome, front + 0.074, hy, hz + k).scale.set(1, 0.7 + (1 - Math.abs(k) * 12) * 0.3, 1);
     // indicator
     add(g, rbox(0.04, 0.06, 0.1, 0.015), mats.amber, front - 0.03, hoodH - 0.2 - 0.14, s * (W / 2 - 0.2 + 0.0));
     add(g, rbox(0.03, 0.05, 0.08, 0.01), mats.amber, front - 0.04, hoodH - 0.11, s * (W / 2 - 0.05));
@@ -172,21 +190,32 @@ export function buildJeepShell(c: Ctx): THREE.Group {
   const gh = hoodH - 0.28;
   const gx = front - 0.06;
   add(g, rbox(0.07, gh, gw, 0.015), mats.paint, gx, 0.2 + gh / 2, 0);
+  // recessed panel with a pressed frame, so the slots sit inside it
+  add(g, rbox(0.014, gh - 0.1, gw - 0.14, 0.01), mats.black, gx + 0.036, 0.2 + gh / 2, 0);
+  for (const dy of [-1, 1]) add(g, rbox(0.02, 0.014, gw - 0.1, 0.005), mats.chrome, gx + 0.04, 0.2 + gh / 2 + dy * (gh / 2 - 0.045), 0);
+  for (const dz of [-1, 1]) add(g, rbox(0.02, gh - 0.06, 0.014, 0.005), mats.chrome, gx + 0.04, 0.2 + gh / 2, dz * (gw / 2 - 0.045));
+  add(g, rbox(0.012, 0.045, 0.1, 0.01), mats.chrome, gx + 0.044, 0.2 + gh - 0.08, 0); // badge
   if (spec.grille === 'slots') {
     const n = 7;
     for (let i = 0; i < n; i++) {
       const z = ((i - (n - 1) / 2) * (gw - 0.12)) / (n - 1);
-      add(g, rbox(0.012, gh * 0.72, 0.03, 0.005), mats.black, gx + 0.037, 0.2 + gh / 2, z);
+      add(g, rbox(0.012, gh * 0.8, 0.026, 0.005), mats.paint, gx + 0.05, 0.2 + gh / 2, z);
     }
   } else {
     for (let i = 0; i < 6; i++) {
-      add(g, rbox(0.012, 0.03, gw - 0.1, 0.005), mats.black, gx + 0.037, 0.26 + (i * (gh - 0.16)) / 5 + 0.04, 0);
+      add(g, rbox(0.012, 0.03, gw - 0.1, 0.005), mats.paint, gx + 0.05, 0.26 + (i * (gh - 0.16)) / 5 + 0.04, 0);
     }
   }
   add(g, rbox(0.1, 0.18, W - 0.02, 0.015), mats.underbody, front - 0.12, 0.09, 0);
 
   // ----- bumpers -----
   add(g, rbox(0.1, 0.16, W + 0.04, 0.03), mats.darkSteel, front + 0.04, 0.055, 0);
+  // channel lip top and bottom, rounded end caps, tow hooks
+  for (const dy of [0.072, -0.072]) add(g, rbox(0.115, 0.016, W + 0.02, 0.006), mats.darkSteel, front + 0.043, 0.055 + dy, 0);
+  for (const s of [1, -1]) {
+    add(g, new THREE.CylinderGeometry(0.08, 0.08, 0.1, 18).rotateZ(Math.PI / 2), mats.darkSteel, front + 0.04, 0.055, s * (W / 2 + 0.02)).scale.set(0.5, 1, 1);
+    add(g, rbox(0.03, 0.05, 0.05, 0.01), mats.black, front + 0.095, 0.055, s * 0.12); // tow hook mounts
+  }
   add(g, rbox(0.09, 0.14, W + 0.04, 0.03), mats.darkSteel, rear - 0.045, 0.06, 0);
   for (const s of [1, -1]) {
     add(g, new THREE.TorusGeometry(0.035, 0.01, 8, 16).rotateY(Math.PI / 2), mats.darkSteel, front + 0.09, 0.02, s * 0.32);

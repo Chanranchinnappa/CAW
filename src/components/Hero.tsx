@@ -52,23 +52,25 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
         >
           {!imgError ? (
             <img
-              src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1400&q=75"
-              srcSet="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=75 800w, https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1400&q=75 1400w, https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=2000&q=75 2000w"
+              src="/hero.webp"
+              srcSet="/hero-800.webp 800w, /hero.webp 1280w"
               sizes="100vw"
               fetchPriority="high"
               decoding="async"
-              alt=""
-              referrerPolicy="no-referrer"
+              alt="A Maruti Gypsy, a restored Willys-type jeep and a Mahindra jeep parked in a Coorg field"
               onError={() => setImgError(true)}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover object-[50%_70%]"
             />
           ) : (
             <div className="h-full w-full bg-[radial-gradient(ellipse_at_70%_30%,#2a2216_0%,#0b0e14_65%)]" />
           )}
         </motion.div>
       </motion.div>
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(100deg,rgb(8_10_14/0.92)_0%,rgb(8_10_14/0.7)_45%,rgb(8_10_14/0.35)_100%)]" />
-      <div className="absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-t from-[#0b0e14] to-transparent" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[17%] -z-[5] flex -translate-y-1/2 justify-center md:top-[33%]">
+        <img src="/hero-logo.webp" alt="" width="640" height="263" decoding="async" className="w-[min(70vw,34rem)] opacity-40 drop-shadow-[0_4px_24px_rgba(0,0,0,0.35)]" />
+      </div>
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(100deg,rgb(8_10_14/0.6)_0%,rgb(8_10_14/0.32)_50%,rgb(8_10_14/0.08)_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 -z-10 h-3/5 bg-gradient-to-t from-[rgb(8_10_14/0.88)] via-[rgb(8_10_14/0.45)] to-transparent" />
 
       {/* Contour lines */}
       <motion.svg
@@ -103,14 +105,14 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
             <MaskText now text="Engineered for the Ghats." delay={0.15} stagger={0.08} />
           </span>
           <span className="block text-[color:var(--t-accent)]">
-            <MaskText now text="Built for the Wilds." delay={0.55} stagger={0.08} />
+            <MaskText now text="Built for the Wild." delay={0.55} stagger={0.08} />
           </span>
         </h1>
 
         <div className="mt-8 flex flex-col gap-8 lg:mt-12 lg:flex-row lg:items-end lg:justify-between">
           <FadeIn now delay={1.1} y={22}>
             <p className="max-w-md text-base leading-relaxed text-[color:var(--t-fg2)] sm:text-lg">
-              Engine rebuilds, custom 4x4 fabrication and ground-up restorations in South Coorg, for Mahindra, Tata and Maruti workhorses.
+              Expert Mechanical Solutions Built to Last, Based in South Coorg. Book a consultation with our team on WhatsApp to discuss your next build.
             </p>
           </FadeIn>
 
@@ -148,16 +150,6 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
 
         <div className="mt-10 flex items-center justify-between text-xs text-[color:var(--t-muted)]">
           <span>Near Ponnampet, Kodagu</span>
-          <span className="flex items-center gap-3" aria-hidden="true">
-            Scroll
-            <span className="relative block h-px w-14 overflow-hidden bg-white/20">
-              <motion.span
-                className="absolute inset-y-0 left-0 w-1/2 bg-[color:var(--t-accent)]"
-                animate={{ x: ['-100%', '200%'] }}
-                transition={{ duration: 1.8, ease: 'easeInOut', repeat: Infinity }}
-              />
-            </span>
-          </span>
         </div>
       </motion.div>
     </section>
@@ -167,7 +159,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
 /** Platforms we work on, then the numbers. Sits straight under the hero. */
 export const ProofBand: React.FC = () => (
   <section className="border-b border-[color:var(--t-border)] bg-[color:var(--t-page)]">
-    <VelocityMarquee items={['Mahindra', 'Maruti Suzuki', 'Tata', 'Toyota', 'Hyundai', 'Honda', 'Force']} />
+    <VelocityMarquee items={['Mahindra', 'Maruti Suzuki', 'Tata', 'Toyota', 'Hyundai', 'Honda', 'Force', 'Willys', 'Ashok Leyland', 'Kirloskar', 'Skoda', 'Volkswagen', 'Mercedes Benz']} />
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
       <dl className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
         {WORKSHOP_INFO.stats.map((stat, idx) => (

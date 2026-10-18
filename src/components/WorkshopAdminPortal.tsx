@@ -255,6 +255,7 @@ export const WorkshopAdminPortal: React.FC<AdminPortalProps> = ({
               </div>
               <h3 className="text-base sm:text-lg font-bold text-[color:var(--t-fg)] font-display">
                 Coorg Auto Works Internal Control
+                <span className="ml-2 text-[10px] font-normal text-[color:var(--t-dim)]">Version {new Date(__BUILD_TIME__).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
               </h3>
             </div>
           </div>

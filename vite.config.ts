@@ -5,6 +5,10 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    define: {
+      // Shown on the staff page so you can tell which version of the site you are looking at.
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    },
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
